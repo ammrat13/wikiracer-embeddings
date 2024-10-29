@@ -1,2 +1,5 @@
 # Ignore training data
 data/
+
+# Ignore Python compiled files
+__pycache__/
