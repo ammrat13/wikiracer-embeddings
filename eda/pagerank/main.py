@@ -35,9 +35,9 @@ def main():
                 damping_factor=damping_factor,
             )
 
-            nodes = np.array([record["node.idx"] for record in records], dtype=np.int32)
+            indxs = np.array([record["node.idx"] for record in records], dtype=np.int32)
             ranks = np.array([record["rank"] for record in records], dtype=np.float64)
-            np.save(f"pagerank-node-{damping_factor:.2f}.npy", nodes)
+            np.save(f"pagerank-index-{damping_factor:.2f}.npy", indxs)
             np.save(f"pagerank-rank-{damping_factor:.2f}.npy", ranks)
 
             cum_ranks = np.cumsum(ranks)
