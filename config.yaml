@@ -1,0 +1,8 @@
+# This file contains the locations of all our data sources, such as MemGraph. It
+# also includes authentication information.
+
+data:
+  memgraph:
+    uri: bolt://localhost:7687
+    user: cs229-simplewiki-data
+    pass: cs229-simplewiki-data-pw

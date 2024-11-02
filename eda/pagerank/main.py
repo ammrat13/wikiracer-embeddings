@@ -5,22 +5,21 @@ This runs the PageRank algorithm at different damping factors, and plots how
 skewed the distribution is. It saves the plots in the current directory.
 """
 
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 
 from neo4j import GraphDatabase
 
 DAMPING_FACTORS = np.linspace(0.95, 0.50, 10).tolist()
 """A list of the damping factors to plot"""
 
-GDB_URI = "bolt://localhost:7687"
-GDB_USER = "cs229-simplewiki-data"
-GDB_PASS = "cs229-simplewiki-data-pw"
 
+def main(uri: str, user: str, password: str) -> None:
 
-def main():
-
-    with GraphDatabase.driver(GDB_URI, auth=(GDB_USER, GDB_PASS)) as driver:
+    with GraphDatabase.driver(uri, auth=(user, password)) as driver:
         driver.verify_connectivity()
 
         for damping_factor in DAMPING_FACTORS:
@@ -29,16 +28,13 @@ def main():
                 """
                 CALL pagerank.get(100, $damping_factor, 1e-5)
                 YIELD node, rank
-                RETURN node.idx, rank
+                RETURN rank
                 ORDER BY rank DESCENDING
                 """,
                 damping_factor=damping_factor,
             )
 
-            indxs = np.array([record["node.idx"] for record in records], dtype=np.int32)
             ranks = np.array([record["rank"] for record in records], dtype=np.float64)
-            np.save(f"pagerank-index-{damping_factor:.2f}.npy", indxs)
-            np.save(f"pagerank-rank-{damping_factor:.2f}.npy", ranks)
 
             cum_ranks = np.cumsum(ranks)
             print(f"Damping = {damping_factor:.2f}")
@@ -64,4 +60,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(
+        description="Get statistics on PageRank distribution"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=argparse.FileType("r"),
+        help="Path to config file",
+        default="config.yaml",
+    )
+    args = parser.parse_args()
+
+    config = yaml.load(args.config, yaml.Loader)
+    main(
+        config["data"]["memgraph"]["uri"],
+        config["data"]["memgraph"]["user"],
+        config["data"]["memgraph"]["pass"],
+    )

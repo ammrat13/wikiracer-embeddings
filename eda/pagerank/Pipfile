@@ -7,6 +7,7 @@ name = "pypi"
 neo4j = "*"
 numpy = "*"
 matplotlib = "*"
+pyyaml = "*"
 
 [dev-packages]
 

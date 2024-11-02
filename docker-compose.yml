@@ -7,6 +7,8 @@ services:
 
   db-mysql:
     image: mysql:9.1
+    profiles:
+      - mysql
     environment:
       MYSQL_DATABASE: simplewiki
       MYSQL_ROOT_PASSWORD: cs229-simplewiki-data-rootpw
