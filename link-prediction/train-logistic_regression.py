@@ -35,22 +35,24 @@ def main(
     dataset_train = positive_train.concatenate(negative_train)
     dataset_val = positive_val.concatenate(negative_val)
 
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.Input(shape=(2 * args.embedding_length,)),
-            tf.keras.layers.Dense(1, activation="sigmoid"),
-        ]
-    )
-
-    model.compile(
-        optimizer="adam",
-        loss="binary_crossentropy",
-        metrics=[
-            tf.keras.metrics.BinaryAccuracy(),
-            tf.keras.metrics.Precision(),
-            tf.keras.metrics.Recall(),
-        ],
-    )
+    if args.continue_training:
+        model = tf.keras.models.load_model(args.output, compile=True)
+    else:
+        model = tf.keras.Sequential(
+            [
+                tf.keras.layers.Input(shape=(2 * args.embedding_length,)),
+                tf.keras.layers.Dense(1, activation="sigmoid"),
+            ]
+        )
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(1e-3),
+            loss=tf.keras.losses.BinaryCrossentropy(),
+            metrics=[
+                tf.keras.metrics.BinaryAccuracy(),
+                tf.keras.metrics.Precision(),
+                tf.keras.metrics.Recall(),
+            ],
+        )
 
     model.fit(
         dataset_train.batch(1024),
@@ -105,6 +107,12 @@ if __name__ == "__main__":
         type=int,
         help="Length of text embeddings",
         default=256,
+    )
+    parser.add_argument(
+        "-c",
+        "--continue-training",
+        action="store_true",
+        help="Continue training from a saved checkopoint, using `-o` as the path",
     )
     parser.add_argument(
         "-o", "--output", help="Path to output model", default="model.keras"
