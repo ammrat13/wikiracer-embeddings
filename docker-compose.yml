@@ -33,6 +33,7 @@ services:
       --storage-mode=IN_MEMORY_ANALYTICAL
       --log-level=INFO
       --memory-limit=24576
+      --query-execution-timeout-sec=0
     ports:
       - 7687:7687
       - 7444:7444
