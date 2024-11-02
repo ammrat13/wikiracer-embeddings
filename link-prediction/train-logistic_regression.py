@@ -12,10 +12,12 @@ def main(
     args: argparse.Namespace, positive: tf.data.Dataset, negative: tf.data.Dataset
 ) -> None:
 
+    # Compute how many samples to put in training and validation. Note that we
+    # don't have a test set here. We don't compute any metrics on it, so we
+    # don't need it here. We still reserve space for it though.
     N = args.num_samples
     N_train = int(0.8 * N)
     N_val = int(0.1 * N)
-    N_test = N - N_train - N_val
 
     # The datasets are already in a random order, so there's no need to shuffle
     # them
@@ -25,16 +27,13 @@ def main(
     # Split into training, validation, and test
     positive_train = positive.take(N_train)
     positive_val = positive.skip(N_train).take(N_val)
-    positive_test = positive.skip(N_train + N_val).take(N_test)
     negative_train = negative.take(N_train)
     negative_val = negative.skip(N_train).take(N_val)
-    negative_test = negative.skip(N_train + N_val).take(N_test)
 
     # Until now, we've kept the positive and negative examples separate in order
     # to have a balanced dataset. Now we'll combine them.
     dataset_train = positive_train.concatenate(negative_train)
     dataset_val = positive_val.concatenate(negative_val)
-    dataset_test = positive_test.concatenate(negative_test)
 
     model = tf.keras.Sequential(
         [
