@@ -75,3 +75,34 @@ def get_datasets(
     test = pos_test.concatenate(neg_test)
 
     return train, val, test
+
+
+@tf.keras.utils.register_keras_serializable(package="CS229")
+class OuterProductLayer(tf.keras.Layer):
+    """
+    From ChatGPT:
+    > Write a `keras` layer which takes two equal-length vectors as input and
+    > outputs their outer product. The layer must not have any learnable
+    > parameters.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        assert len(input_shape) == 2, "Input must consist of two tensors"
+        assert input_shape[0] == input_shape[1], "Both inputs must have the same shape"
+        assert len(input_shape[0]) == 2, "Input tensors must be 2D"
+        assert input_shape[0][0] is None, "Batch size must be None"
+
+    def call(self, inputs):
+        s, t = inputs
+        return tf.keras.ops.einsum("bi,bj->bij", s, t)
+
+    def compute_output_shape(self, input_shape):
+        batch_size = input_shape[0][0]
+        vector_size = input_shape[0][1]
+        return (batch_size, vector_size, vector_size)
+
+    def get_config(self):
+        return super().get_config()

@@ -13,34 +13,6 @@ import tensorflow as tf
 import util
 
 
-@tf.keras.utils.register_keras_serializable()
-class OuterProductLayer(tf.keras.Layer):
-    """
-    From ChatGPT:
-    > Write a `keras` layer which takes two equal-length vectors as input and
-    > outputs their outer product. The layer must not have any learnable
-    > parameters.
-    """
-
-    def __init__(self, **kwargs):
-        super(OuterProductLayer, self).__init__(**kwargs)
-
-    def build(self, input_shape):
-        assert len(input_shape) == 2, "Input must consist of two tensors"
-        assert input_shape[0] == input_shape[1], "Both inputs must have the same shape"
-        assert len(input_shape[0]) == 2, "Input tensors must be 2D"
-        assert input_shape[0][0] is None, "Batch size must be None"
-
-    def call(self, inputs):
-        s, t = inputs
-        return tf.keras.ops.einsum("bi,bj->bij", s, t)
-
-    def compute_output_shape(self, input_shape):
-        batch_size = input_shape[0][0]
-        vector_size = input_shape[0][1]
-        return (batch_size, vector_size, vector_size)
-
-
 def main(
     args: argparse.Namespace, positive: tf.data.Dataset, negative: tf.data.Dataset
 ) -> None:
@@ -55,7 +27,7 @@ def main(
     else:
         input_s = tf.keras.layers.Input(shape=(args.embedding_length,))
         input_t = tf.keras.layers.Input(shape=(args.embedding_length,))
-        combine = OuterProductLayer()([input_s, input_t])
+        combine = util.OuterProductLayer()([input_s, input_t])
         flatten = tf.keras.layers.Flatten()(combine)
         output = tf.keras.layers.Dense(1, activation="sigmoid")(flatten)
         model = tf.keras.Model(inputs=[input_s, input_t], outputs=output)
@@ -88,6 +60,7 @@ def main(
             ),
         ],
     )
+    model.save(args.output)
 
 
 if __name__ == "__main__":
