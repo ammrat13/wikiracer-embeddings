@@ -10,9 +10,7 @@ import tensorflow as tf
 import util
 
 
-def main(
-    args: argparse.Namespace, positive: tf.data.Dataset, negative: tf.data.Dataset
-) -> None:
+def main(args: argparse.Namespace) -> None:
 
     model = tf.keras.models.load_model(args.model, compile=False)
     model.compile(
@@ -31,9 +29,8 @@ def main(
     assert len(input_shape[0]) == 2
     assert input_shape[0][0] is None
 
-    decoder = util.example_decoder(input_shape[0][1])
     train, val, test = util.get_datasets(
-        positive.map(decoder), negative.map(decoder), args.num_train_samples
+        args.data, args.num_train_samples, util.example_decoder(input_shape[0][1])
     )
 
     metrics_train = model.evaluate(train.batch(util.BATCH_SIZE), return_dict=True)
@@ -66,11 +63,4 @@ if __name__ == "__main__":
     parser.add_argument("data", type=str, help="Path to training data")
     args = parser.parse_args()
 
-    positive_dataset = tf.data.TFRecordDataset(
-        os.path.join(args.data, "positive.tfrecord")
-    )
-    negative_dataset = tf.data.TFRecordDataset(
-        os.path.join(args.data, "negative.tfrecord")
-    )
-
-    main(args, positive_dataset, negative_dataset)
+    main(args)

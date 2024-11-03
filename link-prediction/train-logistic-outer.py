@@ -13,13 +13,10 @@ import tensorflow as tf
 import util
 
 
-def main(
-    args: argparse.Namespace, positive: tf.data.Dataset, negative: tf.data.Dataset
-) -> None:
+def main(args: argparse.Namespace) -> None:
 
-    decoder = util.example_decoder(args.embedding_length)
     train, val, _ = util.get_datasets(
-        positive.map(decoder), negative.map(decoder), args.num_samples
+        args.data, args.num_samples, util.example_decoder(args.embedding_length)
     )
 
     if args.continue_training:
@@ -64,40 +61,5 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Train a logistic regression model to do link prediction."
-    )
-    parser.add_argument(
-        "-n",
-        "--num-samples",
-        type=int,
-        help="Number of samples to truncate the data to",
-        default=10000,
-    )
-    parser.add_argument(
-        "-l",
-        "--embedding-length",
-        type=int,
-        help="Length of text embeddings",
-        default=256,
-    )
-    parser.add_argument(
-        "-c",
-        "--continue-training",
-        action="store_true",
-        help="Continue training from a saved checkopoint, using `-o` as the path",
-    )
-    parser.add_argument(
-        "-o", "--output", help="Path to output model", default="model.keras"
-    )
-    parser.add_argument("data", type=str, help="Path to training data")
-    args = parser.parse_args()
-
-    positive_dataset = tf.data.TFRecordDataset(
-        os.path.join(args.data, "positive.tfrecord")
-    )
-    negative_dataset = tf.data.TFRecordDataset(
-        os.path.join(args.data, "negative.tfrecord")
-    )
-
-    main(args, positive_dataset, negative_dataset)
+    args = util.TRAIN_PARSER.parse_args()
+    main(args)

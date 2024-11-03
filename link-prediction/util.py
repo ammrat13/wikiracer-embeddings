@@ -1,5 +1,7 @@
 """Utility methods for training and evaluating link prediction models."""
 
+import argparse
+import os
 from typing import Callable
 
 import tensorflow as tf
@@ -11,6 +13,36 @@ VAL_FRAC: float = 0.1
 TEST_FRAC: float = 0.1
 
 BATCH_SIZE: int = 1024
+
+TRAIN_PARSER: argparse.ArgumentParser = argparse.ArgumentParser(
+    description="Train a logistic regression model to do link prediction."
+)
+"""Argument parser that's used by all the training scripts."""
+
+TRAIN_PARSER.add_argument(
+    "-n",
+    "--num-samples",
+    type=int,
+    help="Number of samples to truncate the data to",
+    default=10000,
+)
+TRAIN_PARSER.add_argument(
+    "-l",
+    "--embedding-length",
+    type=int,
+    help="Length of text embeddings",
+    default=256,
+)
+TRAIN_PARSER.add_argument(
+    "-c",
+    "--continue-training",
+    action="store_true",
+    help="Continue training from a saved checkopoint, using `-o` as the path",
+)
+TRAIN_PARSER.add_argument(
+    "-o", "--output", help="Path to output model", default="model.keras"
+)
+TRAIN_PARSER.add_argument("data", type=str, help="Path to training data")
 
 
 def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
@@ -39,15 +71,18 @@ def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
 
 
 def get_datasets(
-    positive: tf.data.Dataset, negative: tf.data.Dataset, num_samples: int
+    data_dir: str, num_samples: int, decoder: Callable[[bytes], TrainingExample]
 ) -> tuple[tf.data.Dataset, tf.data.Dataset]:
     """
-    Construct the training, validation, and test sets from the positive and
-    negative examples.
+    Construct the training, validation, and test sets.
 
     The datasets will not be decoded by this function, nor will they be
     shuffled. We assume the data is already shuffled.
     """
+
+    # Load the positive and negative datasets
+    positive = tf.data.TFRecordDataset(os.path.join(data_dir, "positive.tfrecord"))
+    negative = tf.data.TFRecordDataset(os.path.join(data_dir, "negative.tfrecord"))
 
     # Compute how many samples to put in training and validation. Note that we
     # don't have a test set here. We don't compute any metrics on it, so we
@@ -73,6 +108,11 @@ def get_datasets(
     train = pos_train.concatenate(neg_train)
     val = pos_val.concatenate(neg_val)
     test = pos_test.concatenate(neg_test)
+
+    # Decode the examples
+    train = train.map(decoder)
+    val = val.map(decoder)
+    test = test.map(decoder)
 
     return train, val, test
 
