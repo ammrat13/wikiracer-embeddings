@@ -41,8 +41,8 @@ def main(
         )
 
     model.fit(
-        train.batch(1024),
-        validation_data=val.batch(1024),
+        train.batch(util.BATCH_SIZE),
+        validation_data=val.batch(util.BATCH_SIZE),
         epochs=1000,
         verbose=2,
         callbacks=[

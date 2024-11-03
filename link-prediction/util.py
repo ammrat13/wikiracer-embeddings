@@ -6,6 +6,12 @@ import tensorflow as tf
 
 TrainingExample = tuple[tuple[tf.Tensor, tf.Tensor], tf.Tensor]
 
+TRAIN_FRAC: float = 0.8
+VAL_FRAC: float = 0.1
+TEST_FRAC: float = 0.1
+
+BATCH_SIZE: int = 1024
+
 
 def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
     """
@@ -30,11 +36,6 @@ def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
         )
 
     return decode_example
-
-
-TRAIN_FRAC = 0.8
-VAL_FRAC = 0.1
-TEST_FRAC = 0.1
 
 
 def get_datasets(
