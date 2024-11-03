@@ -14,11 +14,6 @@ def main(
     args: argparse.Namespace, positive: tf.data.Dataset, negative: tf.data.Dataset
 ) -> None:
 
-    decoder = util.example_decoder(args.embedding_length)
-    train, val, test = util.get_datasets(
-        positive.map(decoder), negative.map(decoder), args.num_train_samples
-    )
-
     model = tf.keras.models.load_model(args.model, compile=False)
     model.compile(
         loss=tf.keras.losses.BinaryCrossentropy(),
@@ -28,6 +23,17 @@ def main(
             tf.keras.metrics.Recall(),
             tf.keras.metrics.AUC(),
         ],
+    )
+
+    input_shape = model.input_shape
+    assert len(input_shape) == 2
+    assert input_shape[0] == input_shape[1]
+    assert len(input_shape[0]) == 2
+    assert input_shape[0][0] is None
+
+    decoder = util.example_decoder(input_shape[0][1])
+    train, val, test = util.get_datasets(
+        positive.map(decoder), negative.map(decoder), args.num_train_samples
     )
 
     metrics_train = model.evaluate(train.batch(util.BATCH_SIZE), return_dict=True)
@@ -55,13 +61,6 @@ if __name__ == "__main__":
         type=int,
         help="Number of samples used when training the model",
         default=10000,
-    )
-    parser.add_argument(
-        "-l",
-        "--embedding-length",
-        type=int,
-        help="Length of text embeddings",
-        default=256,
     )
     parser.add_argument("model", type=str, help="Model to evaluate")
     parser.add_argument("data", type=str, help="Path to training data")
