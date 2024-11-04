@@ -1,5 +1,9 @@
 # This file contains the locations of all our data sources, such as MemGraph. It
 # also includes authentication information.
+#
+# On my local machine, I marked this file with the method in
+# https://stackoverflow.com/a/39776107. This way, I can configure paths for my
+# machine. All paths should be absolute.
 
 data:
   memgraph:
