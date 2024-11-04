@@ -6,3 +6,7 @@ data:
     uri: bolt://localhost:7687
     user: cs229-simplewiki-data
     pass: cs229-simplewiki-data-pw
+  embeddings:
+    1536: /path/to/text-embeddings-1536.npy
+    512: /path/to/text-embeddings-512.npy
+    256: /path/to/text-embeddings-256.npy
