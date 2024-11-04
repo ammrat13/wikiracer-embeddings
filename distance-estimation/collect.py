@@ -85,10 +85,10 @@ def main(
 
         # Write
         output_file["source-idx"][it] = source_idx
-        output_file["target-idx"][it][:source_idx] = IDX_VECTOR[:source_idx]
-        output_file["target-idx"][it][source_idx:] = IDX_VECTOR[source_idx + 1 :]
-        output_file["distance"][it][:source_idx] = y[:source_idx]
-        output_file["distance"][it][source_idx:] = y[source_idx + 1 :]
+        output_file["target-idx"][it, :source_idx] = IDX_VECTOR[:source_idx]
+        output_file["target-idx"][it, source_idx:] = IDX_VECTOR[source_idx + 1 :]
+        output_file["distance"][it, :source_idx] = y[:source_idx]
+        output_file["distance"][it, source_idx:] = y[source_idx + 1 :]
 
 
 if __name__ == "__main__":
