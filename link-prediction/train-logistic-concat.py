@@ -9,14 +9,18 @@ import argparse
 import os
 
 import tensorflow as tf
+import yaml
 
 import util
 
 
 def main(args: argparse.Namespace) -> None:
 
+    config = yaml.safe_load(args.config)
     train, val, _ = util.get_datasets(
-        args.data, args.num_samples, util.example_decoder(args.embedding_length)
+        config["training-data"]["link-prediction"],
+        args.num_samples,
+        util.example_decoder(args.embedding_length),
     )
 
     if args.continue_training:

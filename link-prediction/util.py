@@ -34,15 +34,21 @@ TRAIN_PARSER.add_argument(
     default=256,
 )
 TRAIN_PARSER.add_argument(
-    "-c",
+    "-t",
     "--continue-training",
     action="store_true",
     help="Continue training from a saved checkopoint, using `-o` as the path",
 )
 TRAIN_PARSER.add_argument(
+    "-c",
+    "--config",
+    type=argparse.FileType("r"),
+    help="Path to config file",
+    default="config.yaml",
+)
+TRAIN_PARSER.add_argument(
     "-o", "--output", help="Path to output model", default="model.keras"
 )
-TRAIN_PARSER.add_argument("data", type=str, help="Path to training data")
 
 
 def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:

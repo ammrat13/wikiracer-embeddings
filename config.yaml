@@ -14,3 +14,6 @@ data:
     1536: /path/to/text-embeddings-1536.npy
     512: /path/to/text-embeddings-512.npy
     256: /path/to/text-embeddings-256.npy
+
+training-data:
+  link-prediction: /path/to/link-prediction/
