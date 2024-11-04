@@ -3,5 +3,8 @@ data/
 # Ignore trained models
 models/
 
+# Ignore configuration changes for my machine
+config.yaml
+
 # Ignore Python compiled files
 __pycache__/
