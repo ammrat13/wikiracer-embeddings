@@ -9,6 +9,7 @@ neo4j = "*"
 numpy = "*"
 tqdm = "*"
 pyyaml = "*"
+torch = "*"
 
 [dev-packages]
 

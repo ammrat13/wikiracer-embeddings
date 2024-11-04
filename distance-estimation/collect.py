@@ -23,18 +23,22 @@ def main(
     config: dict[str, Any],
 ) -> None:
 
+    # Compute the number of nodes in the graph
+    n_response, _, _ = driver.execute_query("MATCH (n:Page) RETURN count(n) AS count")
+    N = n_response[0]["count"]
+
     # Create the output file. We could try to extend a file if it already
     # exists, but that gets into issues with Ctrl-C and other interruptions. So,
     # we'll just overwrite the file if it already exists.
     output_directory = config["training-data"]["distance-estimation"]
     output_file = h5py.File(os.path.join(output_directory, args.dataset_name), "w")
-    output_file.create_dataset("distance", (0,), maxshape=(None,), dtype=np.uint8)
     output_file.create_dataset("source-idx", (0,), maxshape=(None,), dtype=np.uint32)
-    output_file.create_dataset("target-idx", (0,), maxshape=(None,), dtype=np.uint32)
-
-    # Compute the number of nodes in the graph
-    n_response, _, _ = driver.execute_query("MATCH (n:Page) RETURN count(n) AS count")
-    N = n_response[0]["count"]
+    output_file.create_dataset(
+        "target-idx", (0, N - 1), maxshape=(None, N - 1), dtype=np.uint32
+    )
+    output_file.create_dataset(
+        "distance", (0, N - 1), maxshape=(None, N - 1), dtype=np.uint8
+    )
 
     # Hoist these variables out of the loop to avoid re-creating them every time
     IDX_VECTOR = np.arange(N, dtype=np.uint32)
@@ -55,7 +59,7 @@ def main(
         RETURN t.idx AS idx, size(path) AS distance
     """
 
-    for s_it in range(args.num_source_nodes):
+    for it in range(args.num_source_nodes):
 
         # Pick a random node according to the pagerank distribution. The user
         # specifies what the damping factor is.
@@ -68,25 +72,23 @@ def main(
         # Run BFS from the source node
         with driver.session() as session:
             result = session.run(BFS_QUERY, idx=source_idx)
-            for record in tqdm(result, desc=f"BFS Number {s_it}", total=N):
+            for record in tqdm(result, desc=f"BFS Number {it}", total=N):
                 y[record["idx"]] = record["distance"]
 
         # Extend the output dataset
-        base = (N - 1) * s_it
-        assert output_file["source-idx"].shape[0] == base
-        assert output_file["target-idx"].shape[0] == base
-        assert output_file["distance"].shape[0] == base
-        new_size = base + N - 1
-        output_file["distance"].resize(new_size, axis=0)
-        output_file["source-idx"].resize(new_size, axis=0)
-        output_file["target-idx"].resize(new_size, axis=0)
+        assert output_file["source-idx"].shape[0] == it
+        assert output_file["target-idx"].shape[0] == it
+        assert output_file["distance"].shape[0] == it
+        output_file["source-idx"].resize(it + 1, axis=0)
+        output_file["target-idx"].resize(it + 1, axis=0)
+        output_file["distance"].resize(it + 1, axis=0)
 
         # Write
-        output_file["source-idx"][base:] = source_idx
-        output_file["target-idx"][base : base + source_idx] = IDX_VECTOR[:source_idx]
-        output_file["target-idx"][base + source_idx :] = IDX_VECTOR[source_idx + 1 :]
-        output_file["distance"][base : base + source_idx] = y[:source_idx]
-        output_file["distance"][base + source_idx :] = y[source_idx + 1 :]
+        output_file["source-idx"][it] = source_idx
+        output_file["target-idx"][it][:source_idx] = IDX_VECTOR[:source_idx]
+        output_file["target-idx"][it][source_idx:] = IDX_VECTOR[source_idx + 1 :]
+        output_file["distance"][it][:source_idx] = y[:source_idx]
+        output_file["distance"][it][source_idx:] = y[source_idx + 1 :]
 
 
 if __name__ == "__main__":
