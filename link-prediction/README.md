@@ -28,3 +28,10 @@ task.
 Finally, the length of the embedding vector seems to have a small impact on the
 loss and AUC, but no impact on the accuracy or F1 score. Vectors of size 256
 should be good enough.
+
+## Framework Choice
+
+This models were developed with TensorFlow and Keras because that's what was
+familiar to me. Unfortunately, it seems difficult to run TensorFlow models from
+C++. In the future, we should use PyTorch. It should also be possible to export
+the weights if we want to.
