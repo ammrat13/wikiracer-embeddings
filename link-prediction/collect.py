@@ -16,14 +16,16 @@ import tqdm
 import yaml
 
 
-def main(driver: GraphDatabase, args: argparse.Namespace) -> None:
-    collect_positive(driver, args)
-    collect_negative(driver, args)
+def main(driver: GraphDatabase, args: argparse.Namespace, out_dir: str) -> None:
+    collect_positive(driver, args, out_dir)
+    collect_negative(driver, args, out_dir)
 
 
-def collect_positive(driver: GraphDatabase, args: argparse.Namespace) -> None:
+def collect_positive(
+    driver: GraphDatabase, args: argparse.Namespace, out_dir: str
+) -> None:
 
-    positive_path = os.path.join(args.output, "positive.tfrecord")
+    positive_path = os.path.join(out_dir, "positive.tfrecord")
     with driver.session() as session, tf.io.TFRecordWriter(positive_path) as writer:
 
         result = session.run(
@@ -44,9 +46,11 @@ def collect_positive(driver: GraphDatabase, args: argparse.Namespace) -> None:
             write_record(record, 1, writer)
 
 
-def collect_negative(driver: GraphDatabase, args: argparse.Namespace) -> None:
+def collect_negative(
+    driver: GraphDatabase, args: argparse.Namespace, out_dir: str
+) -> None:
 
-    negative_path = os.path.join(args.output, "negative.tfrecord")
+    negative_path = os.path.join(out_dir, "negative.tfrecord")
     with driver.session() as session, tf.io.TFRecordWriter(negative_path) as writer:
 
         result = session.run(
@@ -153,4 +157,4 @@ if __name__ == "__main__":
     gdb_user = config["data"]["memgraph"]["user"]
     gdb_pass = config["data"]["memgraph"]["pass"]
     with GraphDatabase.driver(uri=gdb_uri, auth=(gdb_user, gdb_pass)) as driver:
-        main(driver, args)
+        main(driver, args, config["training-data"]["link-prediction"])
