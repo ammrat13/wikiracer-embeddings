@@ -59,12 +59,20 @@ def main(
         RETURN t.idx AS idx, size(path) AS distance
     """
 
+    # Make sure to skip nodes we've already seen
+    source_idx_set = set()
     for it in range(args.num_source_nodes):
 
         # Pick a random node according to the pagerank distribution. The user
         # specifies what the damping factor is.
-        source_response, _, _ = driver.execute_query(SOURCE_QUERY)
-        source_idx = source_response[0]["idx"]
+        source_idx = None
+        while source_idx is None or source_idx in source_idx_set:
+            source_response, _, _ = driver.execute_query(SOURCE_QUERY)
+            if len(source_response) == 0:
+                continue
+            else:
+                source_idx = source_response[0]["idx"]
+        source_idx_set.add(source_idx)
 
         # Create an array to store the resulting distances
         y = np.zeros((N,), dtype=np.uint8)
