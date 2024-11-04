@@ -50,22 +50,28 @@ def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
     Decode a serialized example from a TFRecord file.
 
     We need to know the length of the embeddings in order to decode the example,
-    so we take that and pass it via currying.
+    so we take that and pass it via currying. The examples in the file are a
+    fixed length (1536) but we truncate.
     """
 
     def decode_example(serialized_example: bytes) -> TrainingExample:
+        EMBEDDING_LENGTH = 1536
         example = tf.io.parse_single_example(
             serialized_example,
             {
-                "source": tf.io.FixedLenFeature([length], tf.float32),
-                "target": tf.io.FixedLenFeature([length], tf.float32),
+                "source": tf.io.FixedLenFeature([EMBEDDING_LENGTH], tf.float32),
+                "target": tf.io.FixedLenFeature([EMBEDDING_LENGTH], tf.float32),
                 "label": tf.io.FixedLenFeature([1], tf.int64),
             },
         )
-        return (
-            (example["source"], example["target"]),
-            example["label"],
-        )
+
+        source = example["source"][0:length]
+        target = example["target"][0:length]
+
+        source = source / tf.norm(source)
+        target = target / tf.norm(target)
+
+        return ((source, target), example["label"])
 
     return decode_example
 
