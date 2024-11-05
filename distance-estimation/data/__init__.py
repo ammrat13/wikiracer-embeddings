@@ -51,6 +51,7 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         emb = emb[:, :embedding_length]
         emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
         self.embeddings = torch.from_numpy(emb)
+        self.embedding_length = embedding_length
 
         # Read the HDF5 file
         self.hdf5_file = h5py.File(hdf5_filename, "r")
@@ -75,6 +76,7 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
             self.T = num_runs
 
         # Do weighting if needed
+        self.max_distance = max_distance
         self.class_weights = None
         if max_distance is not None and max_distance > 0:
             counts = np.zeros(max_distance, dtype=np.uint64)
@@ -86,28 +88,50 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
             self.class_weights = torch.from_numpy(np.sum(counts) / counts)
 
     def __len__(self):
-        return self.T * (self.N - 1)
+        return self.T
 
     def __getitem__(self, idx) -> TrainingSample:
+        """
+        Get the idx-th sample from the dataset.
 
-        if idx >= len(self):
-            raise IndexError("Index out of bounds")
-        t = idx // (self.N - 1)
-        i = idx % (self.N - 1)
+        Note that one sample coresponds to one source node and N-1 target nodes.
+        These will also be batched, so you have to flatten.
+        """
 
-        s_idx = self.hdf5_file["source-idx"][t]
-        t_idx = self.hdf5_file["target-idx"][t, i]
-        d = self.hdf5_file["distance"][t, i]
+        s_idx = self.hdf5_file["source-idx"][idx]
+        s = self.embeddings[s_idx].expand(self.N - 1, self.embedding_length)
 
-        s = self.embeddings[s_idx]
-        t = self.embeddings[t_idx]
+        t_idx = self.hdf5_file["target-idx"][idx]
+        t = torch.index_select(self.embeddings, 0, torch.from_numpy(t_idx).long())
+
+        d = self.hdf5_file["distance"][idx]
+        d = torch.from_numpy(d).long()
 
         if self.class_weights is not None:
-            if d < self.class_weights.shape[0]:
-                w = self.class_weights[d]
-            else:
-                w = self.class_weights[0]
+            w_idx = torch.where(d < self.max_distance, d, 0)
+            w = torch.index_select(self.class_weights, 0, w_idx)
         else:
-            w = torch.tensor(1.0).float()
+            w = torch.tensor(1.0).float().expand(self.N - 1)
 
         return ((s, t), d, w)
+
+    def process_batch(self, data: TrainingSample, device: torch.device):
+        """
+        Flatten the batch of data into the format expected by the model. This
+        will also move the data to the device.
+        """
+
+        inp, d, w = data
+        s, t = inp
+
+        s = torch.flatten(s, start_dim=0, end_dim=1)
+        t = torch.flatten(t, start_dim=0, end_dim=1)
+        d = torch.flatten(d, start_dim=0, end_dim=1)
+        w = torch.flatten(w, start_dim=0, end_dim=1)
+
+        s = s.to(device)
+        t = t.to(device)
+        d = d.to(device)
+        w = w.to(device)
+
+        return s, t, d, w

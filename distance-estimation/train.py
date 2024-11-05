@@ -13,8 +13,6 @@ from data import DistanceEstimationDataset
 from models import IModelMetadata
 from models.registry import MODEL_REGISTRY
 
-BATCH_SIZE: int = 1024
-
 
 def main(
     args: argparse.Namespace,
@@ -46,10 +44,10 @@ def main(
     )
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=BATCH_SIZE, num_workers=12, pin_memory=True
+        train_dataset, num_workers=2, pin_memory=True
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=BATCH_SIZE, num_workers=12, pin_memory=True
+        val_dataset, num_workers=2, pin_memory=True
     )
 
     model_meta = model_meta_cls(args, train_dataset.class_weights)
@@ -65,10 +63,7 @@ def main(
         train_loss = 0.0
         for data in tqdm(train_loader):
             optimizer.zero_grad()
-
-            inp, d, w = data
-            s, t = inp
-            s, t, d, w = s.to(device), t.to(device), d.to(device), w.to(device)
+            s, t, d, w = train_dataset.process_batch(data, device)
 
             out = model(s, t)
             l = loss(out, d, w)
@@ -79,14 +74,18 @@ def main(
 
         if (epoch) % 10 == 0:
 
+            # Save the model. The most intuitive way to do this is to save
+            # everything we need to run the model in a single file. This is
+            # not the best way - we should be saving the model and optimizer
+            # state to resume training later.
+            torch.jit.script(model).save(args.output)
+
             val_correct = 0
             val_count = 0
             val_loss = 0.0
             with torch.no_grad():
                 for data in tqdm(val_loader):
-                    inp, d, w = data
-                    s, t = inp
-                    s, t, d, w = s.to(device), t.to(device), d.to(device), w.to(device)
+                    s, t, d, w = val_dataset.process_batch(data, device)
 
                     out = model(s, t)
                     l = loss(out, d, w)
@@ -138,7 +137,6 @@ if __name__ == "__main__":
         default=512,
     )
     parser.add_argument(
-        "-t",
         "--training-runs",
         type=int,
         help="How many BFS runs to use during training",
@@ -156,6 +154,9 @@ if __name__ == "__main__":
         type=int,
         help="Number of epochs to train",
         default=100,
+    )
+    parser.add_argument(
+        "-o", "--output", type=str, help="Output model", default="model.pt"
     )
     parser.add_argument("train_name", type=str, help="Name of the training file")
     parser.add_argument("validation_name", type=str, help="Name of the validation file")
