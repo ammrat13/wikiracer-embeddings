@@ -1,7 +1,7 @@
 # Ignore training data
-data/
+/data/
 # Ignore trained models
-models/
+/models/
 
 # Ignore Python compiled files
 __pycache__/
