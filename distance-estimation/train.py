@@ -56,8 +56,18 @@ def main(
     optimizer = torch.optim.Adam(model.parameters())
 
     print("Starting training loop!\n")
+    start_epoch = 0
+    if args.continue_training:
+        checkpoint = torch.load(
+            args.output,
+            weights_only=True,
+        )
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        print(f"Continuing from epoch {start_epoch + 1}")
 
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, args.epochs):
         print(f"Epoch {epoch + 1} / {args.epochs}")
 
         train_loss = 0.0
@@ -71,14 +81,9 @@ def main(
 
             optimizer.step()
             train_loss += l.item()
+        train_loss /= len(train_loader)
 
         if (epoch) % 10 == 0:
-
-            # Save the model. The most intuitive way to do this is to save
-            # everything we need to run the model in a single file. This is
-            # not the best way - we should be saving the model and optimizer
-            # state to resume training later.
-            torch.jit.script(model).save(args.output)
 
             val_correct = 0
             val_count = 0
@@ -94,11 +99,25 @@ def main(
                     preds = model_meta.extract_predictions(out)
                     val_correct += torch.sum(preds == d).item()
                     val_count += len(preds)
+            val_loss /= len(val_loader)
 
             print(f"    Validation loss: {val_loss / len(val_loader)}")
             print(f"    Validation accuracy: {val_correct / val_count}")
 
-        print(f"    Training loss: {train_loss / len(train_loader)}")
+            # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "val_accuracy": val_correct / val_count,
+                },
+                args.output,
+            )
+
+        print(f"    Training loss: {train_loss}")
         print()
 
 
@@ -157,6 +176,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-o", "--output", type=str, help="Output model", default="model.pt"
+    )
+    parser.add_argument(
+        "-k",
+        "--continue-training",
+        action="store_true",
+        help="Continue from a checkpoint",
     )
     parser.add_argument("train_name", type=str, help="Name of the training file")
     parser.add_argument("validation_name", type=str, help="Name of the validation file")
