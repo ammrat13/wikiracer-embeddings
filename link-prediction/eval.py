@@ -3,7 +3,6 @@ Evaluate a link prediction model.
 """
 
 import argparse
-import os
 
 import tensorflow as tf
 
