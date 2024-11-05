@@ -59,7 +59,7 @@ def main(
     start_epoch = 0
     if args.continue_training:
         checkpoint = torch.load(
-            args.output,
+            args.checkpoint_output,
             weights_only=True,
         )
         model.load_state_dict(checkpoint["model_state_dict"])
@@ -70,6 +70,7 @@ def main(
     for epoch in range(start_epoch, args.epochs):
         print(f"Epoch {epoch + 1} / {args.epochs}")
 
+        model.train()
         train_loss = 0.0
         for data in tqdm(train_loader):
             optimizer.zero_grad()
@@ -84,8 +85,9 @@ def main(
         train_loss /= len(train_loader)
 
         # Always save the first and last epoch, and every 10th epoch.
-        if epoch == 1 or epoch == args.epochs - 1 or (epoch + 1) % 10 == 0:
+        if epoch == 0 or epoch == args.epochs - 1 or (epoch + 1) % 10 == 0:
 
+            model.eval()
             val_correct = 0
             val_count = 0
             val_loss = 0.0
@@ -115,8 +117,10 @@ def main(
                     "val_loss": val_loss,
                     "val_accuracy": val_correct / val_count,
                 },
-                args.output,
+                args.checkpoint_output,
             )
+            # Also save the script for the model.
+            torch.jit.script(model).save(args.script_output)
 
         print(f"    Training loss: {train_loss}")
         print()
@@ -176,7 +180,18 @@ if __name__ == "__main__":
         default=100,
     )
     parser.add_argument(
-        "-o", "--output", type=str, help="Output model", default="model.pt"
+        "-K",
+        "--checkpoint-output",
+        type=str,
+        help="Where to save checkpoints",
+        default="checkpoint.pt",
+    )
+    parser.add_argument(
+        "-o",
+        "--script-output",
+        type=str,
+        help="Output model in TorchScript",
+        default="model.pt",
     )
     parser.add_argument(
         "-k",

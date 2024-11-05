@@ -27,33 +27,33 @@ class ICategoricalModelMetadata(IModelMetadata):
         pass
 
     def get_loss(self) -> torch.nn.Module:
-
-        @torch.compile
-        class CategoricalModelLoss(torch.nn.Module):
-            max_distance: int
-
-            def __init__(self, max_distance: int, class_weights: torch.Tensor):
-                super().__init__()
-                self.max_distance = max_distance
-                self.cross_entropy = torch.nn.CrossEntropyLoss(class_weights)
-
-            def forward(
-                self,
-                output: torch.Tensor,
-                labels: torch.Tensor,
-                sample_weights: torch.Tensor,
-            ) -> torch.Tensor:
-                trunc = torch.where(
-                    labels >= self.max_distance,
-                    torch.tensor(0, dtype=torch.uint8),
-                    labels,
-                ).long()
-                onehot = torch.nn.functional.one_hot(
-                    trunc, num_classes=self.max_distance
-                ).float()
-                return self.cross_entropy(output, onehot)
-
         return CategoricalModelLoss(self.max_distance, self.class_weights)
 
     def extract_predictions(self, output: torch.Tensor) -> torch.Tensor:
         return torch.argmax(output, dim=1)
+
+
+@torch.compile
+class CategoricalModelLoss(torch.nn.Module):
+    max_distance: int
+
+    def __init__(self, max_distance: int, class_weights: torch.Tensor):
+        super().__init__()
+        self.max_distance = max_distance
+        self.cross_entropy = torch.nn.CrossEntropyLoss(class_weights)
+
+    def forward(
+        self,
+        output: torch.Tensor,
+        labels: torch.Tensor,
+        sample_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        trunc = torch.where(
+            labels >= self.max_distance,
+            torch.tensor(0, dtype=torch.uint8),
+            labels,
+        ).long()
+        onehot = torch.nn.functional.one_hot(
+            trunc, num_classes=self.max_distance
+        ).float()
+        return self.cross_entropy(output, onehot)
