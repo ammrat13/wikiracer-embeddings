@@ -18,3 +18,5 @@ data:
 training-data:
   link-prediction: /path/to/link-prediction/
   distance-estimation: /path/to/distance-estimation/
+
+seed: 0x2290229022902290
