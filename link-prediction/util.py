@@ -6,13 +6,8 @@ from typing import Callable
 
 import tensorflow as tf
 
-TrainingExample = tuple[tuple[tf.Tensor, tf.Tensor], tf.Tensor]
-
-TRAIN_FRAC: float = 0.8
-VAL_FRAC: float = 0.1
-TEST_FRAC: float = 0.1
-
-BATCH_SIZE: int = 1024
+# ------------------------------------------------------------------------------
+# ARGUMENT PARSING:
 
 TRAIN_PARSER: argparse.ArgumentParser = argparse.ArgumentParser(
     description="Train a logistic regression model to do link prediction."
@@ -50,6 +45,20 @@ TRAIN_PARSER.add_argument(
     "-o", "--output", help="Path to output model", default="model.keras"
 )
 
+CONVERT_PARSER: argparse.ArgumentParser = argparse.ArgumentParser(
+    description="Convert a logistic regression model to the PyTorch format."
+)
+"""Argument parser that's used by all the conversion scripts."""
+
+CONVERT_PARSER.add_argument("source", help="Path to the Keras model", type=str)
+CONVERT_PARSER.add_argument("dest", help="Path to the PyTorch model", type=str)
+
+# ------------------------------------------------------------------------------
+# DATASET DECODING:
+
+TrainingExample = tuple[tuple[tf.Tensor, tf.Tensor], tf.Tensor]
+"""This is a training example in the TFRecord file."""
+
 
 def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
     """
@@ -80,6 +89,13 @@ def example_decoder(length: int) -> Callable[[bytes], TrainingExample]:
         return ((source, target), example["label"])
 
     return decode_example
+
+
+TRAIN_FRAC: float = 0.8
+VAL_FRAC: float = 0.1
+TEST_FRAC: float = 0.1
+
+BATCH_SIZE: int = 1024
 
 
 def get_datasets(
@@ -127,6 +143,10 @@ def get_datasets(
     test = test.map(decoder)
 
     return train, val, test
+
+
+# ------------------------------------------------------------------------------
+# CUSTOM LAYERS:
 
 
 @tf.keras.utils.register_keras_serializable(package="CS229")

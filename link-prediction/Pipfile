@@ -9,6 +9,7 @@ numpy = "*"
 tensorflow = {extras = ["and-cuda"], version = "*"}
 tqdm = "*"
 pyyaml = "*"
+#torch = "*"
 
 [dev-packages]
 

@@ -33,5 +33,7 @@ should be good enough.
 
 This models were developed with TensorFlow and Keras because that's what was
 familiar to me. Unfortunately, it seems difficult to run TensorFlow models from
-C++. In the future, we should use PyTorch. It should also be possible to export
-the weights if we want to.
+C++. So, there are scripts to export the models to PyTorch.
+
+The scripts don't work TensorFlow for CUDA installed, so you have to just
+install the normal TensorFlow package when running them.
