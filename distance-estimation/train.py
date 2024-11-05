@@ -83,7 +83,8 @@ def main(
             train_loss += l.item()
         train_loss /= len(train_loader)
 
-        if (epoch) % 10 == 0:
+        # Always save the first and last epoch, and every 10th epoch.
+        if epoch == 1 or epoch == args.epochs - 1 or (epoch + 1) % 10 == 0:
 
             val_correct = 0
             val_count = 0
@@ -101,7 +102,7 @@ def main(
                     val_count += len(preds)
             val_loss /= len(val_loader)
 
-            print(f"    Validation loss: {val_loss / len(val_loader)}")
+            print(f"    Validation loss: {val_loss}")
             print(f"    Validation accuracy: {val_correct / val_count}")
 
             # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
