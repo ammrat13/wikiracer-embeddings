@@ -71,7 +71,9 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
 
             if args.confusion_matrix:
                 confusion_matrix += sklearn.metrics.confusion_matrix(
-                    labels.cpu(), preds.cpu(), labels=list(range(model.max_distance))
+                    labels.detach().cpu(),
+                    preds.detach().cpu(),
+                    labels=list(range(model.max_distance)),
                 )
 
     print(f"    Accuracy:     {correct / count}")
@@ -82,10 +84,11 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     print(f"    MRE:          {relative_error / connected_match}")
 
     if args.confusion_matrix:
+        confusion_matrix /= np.sum(confusion_matrix, axis=1, keepdims=True)
         print(f"    Confusion Matrix:")
-        print(confusion_matrix / count)
+        print(confusion_matrix)
 
-        disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix / count)
+        disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix)
         disp.plot(
             include_values=True, cmap="viridis", ax=None, xticks_rotation="horizontal"
         )
