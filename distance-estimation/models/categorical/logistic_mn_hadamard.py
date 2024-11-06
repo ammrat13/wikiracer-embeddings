@@ -5,7 +5,7 @@ import torch
 from models.categorical import ICategoricalModelMetadata
 
 
-class MultinomialHadamardModelMetadata(ICategoricalModelMetadata):
+class LogisticMnHadamardModelMetadata(ICategoricalModelMetadata):
     """
     Model that uses multinomial logistic regression with element-wise
     multiplication to combine features.
@@ -16,11 +16,11 @@ class MultinomialHadamardModelMetadata(ICategoricalModelMetadata):
         self.embedding_length = args.embedding_length
 
     def get_model(self) -> torch.nn.Module:
-        return MultinomialHadamardModel(self.embedding_length, self.max_distance)
+        return LogisticMnHadamardModel(self.embedding_length, self.max_distance)
 
 
 @torch.compile
-class MultinomialHadamardModel(torch.nn.Module):
+class LogisticMnHadamardModel(torch.nn.Module):
     embedding_length: int
     max_distance: int
 
