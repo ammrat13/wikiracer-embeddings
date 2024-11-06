@@ -70,8 +70,8 @@ def main(
     for epoch in range(start_epoch, args.epochs):
         print(f"Epoch {epoch + 1} / {args.epochs}")
 
-        model.train()
         train_loss = 0.0
+        model.train()
         for data in tqdm(train_loader):
             optimizer.zero_grad()
             s, t, d, w = train_dataset.process_batch(data, device)
@@ -84,46 +84,43 @@ def main(
             train_loss += l.item()
         train_loss /= len(train_loader)
 
-        # Always save the first and last epoch, and every 10th epoch.
-        if epoch == 0 or epoch == args.epochs - 1 or (epoch + 1) % 10 == 0:
+        val_correct = 0
+        val_count = 0
+        val_loss = 0.0
+        model.eval()
+        with torch.no_grad():
+            for data in tqdm(val_loader):
+                s, t, d, w = val_dataset.process_batch(data, device)
 
-            model.eval()
-            val_correct = 0
-            val_count = 0
-            val_loss = 0.0
-            with torch.no_grad():
-                for data in tqdm(val_loader):
-                    s, t, d, w = val_dataset.process_batch(data, device)
+                out = model(s, t)
+                l = loss(out, d, w)
+                val_loss += l.item()
 
-                    out = model(s, t)
-                    l = loss(out, d, w)
-                    val_loss += l.item()
-
-                    preds = model_meta.extract_predictions(out)
-                    val_correct += torch.sum(preds == d).item()
-                    val_count += len(preds)
-            val_loss /= len(val_loader)
-
-            print(f"    Validation loss: {val_loss}")
-            print(f"    Validation accuracy: {val_correct / val_count}")
-
-            # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
-            torch.save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    "train_loss": train_loss,
-                    "val_loss": val_loss,
-                    "val_accuracy": val_correct / val_count,
-                },
-                args.checkpoint_output,
-            )
-            # Also save the script for the model.
-            torch.jit.script(model).save(args.script_output)
+                preds = model_meta.extract_predictions(out)
+                val_correct += torch.sum(preds == d).item()
+                val_count += len(preds)
+        val_accuracy = val_correct / val_count
+        val_loss /= len(val_loader)
 
         print(f"    Training loss: {train_loss}")
+        print(f"    Validation loss: {val_loss}")
+        print(f"    Validation accuracy: {val_accuracy}")
         print()
+
+        # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_accuracy": val_accuracy,
+            },
+            args.checkpoint_output,
+        )
+        # Also save the script for the model.
+        torch.jit.script(model).save(args.script_output)
 
 
 if __name__ == "__main__":
