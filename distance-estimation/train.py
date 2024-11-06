@@ -71,17 +71,23 @@ def main(
         print(f"Epoch {epoch + 1} / {args.epochs}")
 
         train_loss = 0.0
+        train_correct = 0
+        train_count = 0
         model.train()
         for data in tqdm(train_loader):
-            optimizer.zero_grad()
             s, t, d, w = train_dataset.process_batch(data, device)
+            optimizer.zero_grad()
 
             out = model(s, t)
             l = loss(out, d, w)
             l.backward()
-
             optimizer.step()
+
+            p = model_meta.extract_predictions(out)
             train_loss += l.item()
+            train_correct += torch.sum(p == d).item()
+            train_count += len(p)
+        train_accuracy = train_correct / train_count
         train_loss /= len(train_loader)
 
         val_correct = 0
@@ -125,6 +131,7 @@ def main(
         val_loss /= len(val_loader)
 
         print(f"    Training loss:           {train_loss}")
+        print(f"    Training accuracy:       {train_accuracy}")
         print(f"    Validation loss:         {val_loss}")
         print(f"    Validation accuracy:     {val_accuracy}")
         print(f"    Validation connected FP: {val_connected_false_positives}")
@@ -175,7 +182,7 @@ if __name__ == "__main__":
         "--max-dist",
         type=int,
         help="Maximum distance to predict (exclusive)",
-        default=6,
+        default=7,
     )
     parser.add_argument(
         "-l",
