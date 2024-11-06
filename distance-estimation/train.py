@@ -86,6 +86,11 @@ def main(
 
         val_correct = 0
         val_count = 0
+        val_connected_false_positives = 0
+        val_connected_false_negatives = 0
+        val_connected_match = 0
+        val_absolute_error = 0.0
+        val_relative_error = 0.0
         val_loss = 0.0
         model.eval()
         with torch.no_grad():
@@ -96,15 +101,37 @@ def main(
                 l = loss(out, d, w)
                 val_loss += l.item()
 
-                preds = model_meta.extract_predictions(out)
-                val_correct += torch.sum(preds == d).item()
-                val_count += len(preds)
+                p = model_meta.extract_predictions(out)
+
+                val_correct += torch.sum(p == d).item()
+                val_count += len(p)
+
+                val_connected_false_positives += torch.sum((p != 0) & (d == 0)).item()
+                val_connected_false_negatives += torch.sum((p == 0) & (d != 0)).item()
+
+                mtch = (p != 0) & (d != 0)
+                val_connected_match += torch.sum(mtch).item()
+                val_absolute_error += torch.sum(
+                    torch.abs(torch.where(mtch, p - d, 0))
+                ).item()
+                val_relative_error += torch.sum(
+                    torch.abs(torch.where(mtch, p - d, 0) / torch.where(d != 0, d, 1))
+                ).item()
         val_accuracy = val_correct / val_count
+        val_connected_false_positives /= val_count
+        val_connected_false_negatives /= val_count
+        val_absolute_error /= val_connected_match
+        val_relative_error /= val_connected_match
         val_loss /= len(val_loader)
 
-        print(f"    Training loss: {train_loss}")
-        print(f"    Validation loss: {val_loss}")
-        print(f"    Validation accuracy: {val_accuracy}")
+        print(f"    Training loss:           {train_loss}")
+        print(f"    Validation loss:         {val_loss}")
+        print(f"    Validation accuracy:     {val_accuracy}")
+        print(f"    Validation connected FP: {val_connected_false_positives}")
+        print(f"    Validation connected FN: {val_connected_false_negatives}")
+        print(f"    Validation connected EQ: {val_connected_match / val_count}")
+        print(f"    Validation MAE:          {val_absolute_error}")
+        print(f"    Validation MRE:          {val_relative_error}")
         print()
 
         # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training

@@ -69,23 +69,27 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
                 )
             ).item()
 
-            confusion_matrix += sklearn.metrics.confusion_matrix(
-                labels.cpu(), preds.cpu(), labels=list(range(model.max_distance))
-            )
+            if args.confusion_matrix:
+                confusion_matrix += sklearn.metrics.confusion_matrix(
+                    labels.cpu(), preds.cpu(), labels=list(range(model.max_distance))
+                )
 
-    print(f"    Accuracy: {correct / count}")
-    print(f"    Connected False Positives: {connected_false_positives / count}")
-    print(f"    Connected False Negatives: {connected_false_negatives / count}")
-    print(f"    Mean Absolute Error: {absolute_error / connected_match}")
-    print(f"    Mean Relative Error: {relative_error / connected_match}")
-    print("    Confusion Matrix:")
-    print(confusion_matrix / count)
+    print(f"    Accuracy:     {correct / count}")
+    print(f"    Connected FP: {connected_false_positives / count}")
+    print(f"    Connected FN: {connected_false_negatives / count}")
+    print(f"    Connected EQ: {connected_match / count}")
+    print(f"    MAE:          {absolute_error / connected_match}")
+    print(f"    MRE:          {relative_error / connected_match}")
 
-    disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix / count)
-    disp.plot(
-        include_values=True, cmap="viridis", ax=None, xticks_rotation="horizontal"
-    )
-    plt.savefig(args.output)
+    if args.confusion_matrix:
+        print(f"    Confusion Matrix:")
+        print(confusion_matrix / count)
+
+        disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix / count)
+        disp.plot(
+            include_values=True, cmap="viridis", ax=None, xticks_rotation="horizontal"
+        )
+        plt.savefig(args.output)
 
 
 if __name__ == "__main__":
@@ -106,9 +110,15 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
+        "-m",
+        "--confusion-matrix",
+        action="store_true",
+        help="Whether to create a confusion matrix",
+    )
+    parser.add_argument(
         "-o",
         "--output",
-        type=argparse.FileType("wb"),
+        type=str,
         help="Where to write the confusion matrix",
         default="confusion_matrix.png",
     )
