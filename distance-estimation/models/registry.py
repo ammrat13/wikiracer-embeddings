@@ -10,5 +10,5 @@ from models import IModelMetadata
 from models.categorical.multinomial_hadamard import MultinomialHadamardModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
-    "multinomial-hadamard": MultinomialHadamardModelMetadata,
+    "logistic_mn-hadamard": MultinomialHadamardModelMetadata,
 }
