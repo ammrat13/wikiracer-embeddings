@@ -53,7 +53,4 @@ class CategoricalModelLoss(torch.nn.Module):
             torch.tensor(0, dtype=torch.uint8),
             labels,
         ).long()
-        onehot = torch.nn.functional.one_hot(
-            trunc, num_classes=self.max_distance
-        ).float()
-        return self.cross_entropy(output, onehot)
+        return self.cross_entropy(output, trunc)
