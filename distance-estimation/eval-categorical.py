@@ -41,8 +41,6 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     connected_false_positives = 0
     connected_false_negatives = 0
     connected_match = 0
-    absolute_error = 0.0
-    relative_error = 0.0
     confusion_matrix = np.zeros((model.max_distance, model.max_distance))
 
     with torch.no_grad():
@@ -56,43 +54,29 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
 
             connected_false_positives += torch.sum((preds != 0) & (labels == 0)).item()
             connected_false_negatives += torch.sum((preds == 0) & (labels != 0)).item()
+            connected_match += torch.sum((preds != 0) & (labels != 0)).item()
 
-            conn_match = (preds != 0) & (labels != 0)
-            connected_match += torch.sum(conn_match).item()
-            absolute_error += torch.sum(
-                torch.abs(torch.where(conn_match, preds - labels, 0))
-            ).item()
-            relative_error += torch.sum(
-                torch.abs(
-                    torch.where(conn_match, preds - labels, 0)
-                    / torch.where(labels != 0, labels, 1)
-                )
-            ).item()
+            confusion_matrix += sklearn.metrics.confusion_matrix(
+                labels.detach().cpu(),
+                preds.detach().cpu(),
+                labels=list(range(model.max_distance)),
+            )
+    accuracy = correct / count
+    connected_false_positives /= count
+    connected_false_negatives /= count
+    connected_match /= count
+    confusion_matrix /= np.sum(confusion_matrix, axis=1, keepdims=True)
 
-            if args.confusion_matrix:
-                confusion_matrix += sklearn.metrics.confusion_matrix(
-                    labels.detach().cpu(),
-                    preds.detach().cpu(),
-                    labels=list(range(model.max_distance)),
-                )
+    print(f"    Accuracy:     {accuracy}")
+    print(f"    Connected FP: {connected_false_positives}")
+    print(f"    Connected FN: {connected_false_negatives}")
+    print(f"    Connected EQ: {connected_match}")
+    print(f"    Confusion Matrix:")
+    print(confusion_matrix)
 
-    print(f"    Accuracy:     {correct / count}")
-    print(f"    Connected FP: {connected_false_positives / count}")
-    print(f"    Connected FN: {connected_false_negatives / count}")
-    print(f"    Connected EQ: {connected_match / count}")
-    print(f"    MAE:          {absolute_error / connected_match}")
-    print(f"    MRE:          {relative_error / connected_match}")
-
-    if args.confusion_matrix:
-        confusion_matrix /= np.sum(confusion_matrix, axis=1, keepdims=True)
-        print(f"    Confusion Matrix:")
-        print(confusion_matrix)
-
-        disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix)
-        disp.plot(
-            include_values=True, cmap="viridis", ax=None, xticks_rotation="horizontal"
-        )
-        plt.savefig(args.output)
+    disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix)
+    disp.plot(include_values=True)
+    plt.savefig(args.output)
 
 
 if __name__ == "__main__":
@@ -111,12 +95,6 @@ if __name__ == "__main__":
         type=int,
         help="How many BFS runs to use",
         default=None,
-    )
-    parser.add_argument(
-        "-m",
-        "--confusion-matrix",
-        action="store_true",
-        help="Whether to create a confusion matrix",
     )
     parser.add_argument(
         "-o",
