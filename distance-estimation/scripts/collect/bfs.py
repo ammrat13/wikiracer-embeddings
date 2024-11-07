@@ -8,6 +8,7 @@ and we don't include the node itself in the dataset.
 
 import argparse
 import os
+import sys
 from typing import Any
 
 import h5py

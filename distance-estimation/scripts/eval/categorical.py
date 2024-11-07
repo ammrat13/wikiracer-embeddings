@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -10,6 +11,9 @@ import sklearn.metrics
 import torch
 from tqdm import tqdm
 import yaml
+
+# See: https://stackoverflow.com/a/49155631
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from data import DistanceEstimationDataset
 
