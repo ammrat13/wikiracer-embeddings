@@ -40,8 +40,8 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         of "runs" (i.e. T). This way, we can characterize the model's
         performance on smaller datasets.
 
-        Finally, we can weight the dataset to compensate for underrepresented
-        classes. Note that the maximum distance is exclusive.
+        Finally, we have to set a maximum distance before we just declare nodes
+        unconnected.
         """
 
         # Read the Numpy array
@@ -75,17 +75,15 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         if num_runs is not None and self.T >= num_runs:
             self.T = num_runs
 
-        # Do weighting if needed
+        # Do weighting
+        counts = np.zeros(max_distance, dtype=np.uint64)
+        for chunk in self.hdf5_file["distance"].iter_chunks():
+            arr = self.hdf5_file["distance"][chunk]
+            arr = np.where(arr >= max_distance, 0, arr)
+            num, _ = np.histogram(arr, bins=np.arange(max_distance + 1))
+            counts += num.astype(np.uint64)
         self.max_distance = max_distance
-        self.class_weights = None
-        if max_distance is not None and max_distance > 0:
-            counts = np.zeros(max_distance, dtype=np.uint64)
-            for chunk in self.hdf5_file["distance"].iter_chunks():
-                arr = self.hdf5_file["distance"][chunk]
-                arr = np.where(arr >= max_distance, 0, arr)
-                num, _ = np.histogram(arr, bins=np.arange(max_distance + 1))
-                counts += num.astype(np.uint64)
-            self.class_weights = torch.from_numpy(np.sum(counts) / counts)
+        self.class_weights = torch.from_numpy(np.sum(counts) / counts)
 
     def __len__(self):
         return self.T
@@ -105,13 +103,11 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         t = torch.index_select(self.embeddings, 0, torch.from_numpy(t_idx).long())
 
         d = self.hdf5_file["distance"][idx]
+        d = np.where(d >= self.max_distance, 0, d)
         d = torch.from_numpy(d).long()
 
-        if self.class_weights is not None:
-            w_idx = torch.where(d < self.max_distance, d, 0)
-            w = torch.index_select(self.class_weights, 0, w_idx)
-        else:
-            w = torch.tensor(1.0).float().expand(self.N - 1)
+        w_idx = torch.where(d < self.max_distance, d, 0)
+        w = torch.index_select(self.class_weights, 0, w_idx)
 
         return ((s, t), d, w)
 

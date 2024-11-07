@@ -38,7 +38,7 @@ def main(
     val_dataset = DistanceEstimationDataset(
         os.path.join(dataset_base, args.validation_name),
         config["data"]["embeddings"][1536],
-        max_distance=None,
+        max_distance=args.max_dist,
         num_runs=args.validation_runs,
         embedding_length=args.embedding_length,
     )

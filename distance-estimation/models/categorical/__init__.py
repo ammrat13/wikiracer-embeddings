@@ -48,9 +48,4 @@ class CategoricalModelLoss(torch.nn.Module):
         labels: torch.Tensor,
         sample_weights: torch.Tensor,
     ) -> torch.Tensor:
-        trunc = torch.where(
-            labels >= self.max_distance,
-            torch.tensor(0, dtype=torch.uint8),
-            labels,
-        ).long()
-        return self.cross_entropy(output, trunc)
+        return self.cross_entropy(output, labels)
