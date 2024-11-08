@@ -23,6 +23,7 @@ def main(uri: str, user: str, password: str) -> None:
         driver.verify_connectivity()
 
         for damping_factor in DAMPING_FACTORS:
+            damping_factor_int = round(100 * damping_factor)
 
             records, _, _ = driver.execute_query(
                 """
@@ -35,28 +36,22 @@ def main(uri: str, user: str, password: str) -> None:
             )
 
             ranks = np.array([record["rank"] for record in records], dtype=np.float64)
-
             cum_ranks = np.cumsum(ranks)
-            print(f"Damping = {damping_factor:.2f}")
+
+            print(f"Damping = {damping_factor_int}%")
             for cutoff in [0.50, 0.90, 0.95, 0.99]:
                 idx = np.searchsorted(cum_ranks, cutoff)
                 print(f"\t{int(100 * cutoff)} = {idx}")
 
-            for plt_type in ["log"]:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.plot(cum_ranks)
+            ax.set_title(f"PageRank Distribution at \\(d = {damping_factor_int}\\%\\)")
+            ax.set_ylabel("Cumulative Probability")
+            ax.set_ylim(0, 1)
+            ax.set_xlabel("Rank")
 
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ax.plot(ranks)
-                ax.set_title(f"Damping = {damping_factor:.2f}")
-                ax.set_ylabel("PageRank")
-
-                if plt_type == "nrm":
-                    ax.set_ylim(0, 1e-2)
-                if plt_type == "log":
-                    ax.set_yscale("log")
-                    ax.set_ylim(1e-7, 1e-2)
-
-                fig.savefig(f"pagerank-{plt_type}-damping-{damping_factor:.2f}.png")
+            fig.savefig(f"pagerank-damping-{damping_factor_int}.png")
 
 
 if __name__ == "__main__":
@@ -74,6 +69,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = yaml.load(args.config, yaml.Loader)
+    plt.style.use(config["plotting"]["style"])
     main(
         config["data"]["memgraph"]["uri"],
         config["data"]["memgraph"]["user"],

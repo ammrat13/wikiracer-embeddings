@@ -2,7 +2,8 @@
 # See: https://tex.stackexchange.com/a/623794
 # See: https://matplotlib.org/stable/users/explain/customizing.html
 
-figure.figsize : 4.9, 3.5
+figure.figsize: 5.0, 3.0
+figure.dpi: 500
 
 font.family: serif
 font.serif: Times
