@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     config = yaml.safe_load(args.config)
+    plt.style.use(config["plotting"]["style"])
 
     data_directory = config["training-data"]["distance-estimation"]
     data_file = h5py.File(os.path.join(data_directory, args.file_name))
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     print(ret)
 
     plt.bar(np.arange(args.bins), ret, width=1.0, align="edge")
-    plt.xlabel("Distance")
-    plt.ylabel("Number of node pairs")
-    plt.title("Node distance histogram")
+    plt.title("BFS Path-Length Histogram")
+    plt.xlabel("Length")
+    plt.ylabel("Number of Node Pairs")
     plt.savefig(args.output.name)

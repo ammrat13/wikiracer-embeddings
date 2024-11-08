@@ -1,0 +1,14 @@
+# Matplotlib Stylesheet for reports
+# See: https://tex.stackexchange.com/a/623794
+# See: https://matplotlib.org/stable/users/explain/customizing.html
+
+figure.figsize : 4.9, 3.5
+
+font.family: serif
+font.serif: Times
+
+axes.titlesize: medium
+figure.titlesize: medium
+
+text.usetex: True
+text.latex.preamble: \usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}[=v2]
