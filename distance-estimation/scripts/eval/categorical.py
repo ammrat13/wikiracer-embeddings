@@ -78,8 +78,8 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     print(f"    Confusion Matrix:")
     print(confusion_matrix)
 
-    disp = sklearn.metrics.ConfusionMatrixDisplay(confusion_matrix)
-    disp.plot(include_values=True)
+    disp = sklearn.metrics.ConfusionMatrixDisplay(100 * confusion_matrix)
+    disp.plot(include_values=True, values_format=".0f")
     plt.savefig(args.output)
 
 
@@ -120,5 +120,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     config = yaml.safe_load(args.config)
+    plt.style.use(config["plotting"]["style"])
 
     main(args, config)
