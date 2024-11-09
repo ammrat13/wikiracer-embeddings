@@ -1,14 +1,14 @@
 """
 Take in a list of embedding vectors and output statistics on them.
-
-The embedding file must be given as the first argument.
 """
 
+import argparse
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import yaml
 
 
 def sphere_marginal(d: int, x: np.ndarray) -> np.ndarray:
@@ -34,16 +34,18 @@ def main(vecs: np.ndarray) -> None:
     print(f"Rayleigh statistic: {rayleigh_statistic}")
     print(f"Rayleigh p-value:   {rayleigh_pvalue:.4f}")
 
+    DOT_TEST_NUM = 2000
     dot_test_vecs = vecs - mean
     np.random.default_rng().shuffle(dot_test_vecs)
-    dot_test_vecs = dot_test_vecs[:2000]
+    dot_test_vecs = dot_test_vecs[:DOT_TEST_NUM]
     dot_test = np.einsum("id,jd->ij", dot_test_vecs, dot_test_vecs).reshape((-1,))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.hist(dot_test, bins=100, density=True)
     ax.plot(np.linspace(-1, 1, 1000), sphere_marginal(D, np.linspace(-1, 1, 1000)))
-    ax.set_title("Dot Product Distribution")
+    ax.set_title(f"Dot Product Distribution for {D}D")
+    ax.set_ylabel("Probability Density")
     ax.set_xlim(-1, 1)
     fig.savefig("embed-dot-test.png")
 
@@ -53,10 +55,31 @@ def main(vecs: np.ndarray) -> None:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(pca_eigvals[::-1])
-    ax.set_title("PCA Eigenvalues")
+    ax.set_title(f"Principal Component Analysis for {D}D")
     ax.set_yscale("log")
+    ax.set_ylabel("Eigenvalue")
     fig.savefig("embed-eigenvalues.png")
 
 
 if __name__ == "__main__":
-    main(np.load(sys.argv[1]))
+    parser = argparse.ArgumentParser(description="Analyze embeddings.")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=argparse.FileType("r"),
+        help="Path to config file",
+        default="config.yaml",
+    )
+    parser.add_argument(
+        "-d",
+        "--dimension",
+        type=int,
+        help="Dimension of the embedding vectors",
+        default=256,
+    )
+
+    args = parser.parse_args()
+    config = yaml.safe_load(args.config)
+    plt.style.use(config["plotting"]["style"])
+
+    main(np.load(config["data"]["embeddings"][args.dimension]))
