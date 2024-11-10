@@ -27,16 +27,20 @@ class RegFC2HadamardModelMetadata(IRegressionModelMetadata):
         self.hidden_length = args.hidden_length
 
     def get_model(self) -> torch.nn.Module:
-        return RegFC2HadamardModel(self.embedding_length, self.hidden_length)
+        return RegFC2HadamardModel(
+            self.embedding_length, self.hidden_length, self.max_distance
+        )
 
 
 @torch.compile
 class RegFC2HadamardModel(torch.nn.Module):
     embedding_length: int
+    max_distance: int
 
-    def __init__(self, embedding_length: int, hidden_length: int):
+    def __init__(self, embedding_length: int, hidden_length: int, max_distance: int):
         super().__init__()
         self.embedding_length = embedding_length
+        self.max_distance = max_distance
         self.hidden_linear = torch.nn.Linear(embedding_length, hidden_length)
         self.hidden_values = torch.nn.ReLU()
         self.output_linear = torch.nn.Linear(hidden_length, 1)

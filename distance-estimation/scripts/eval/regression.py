@@ -40,47 +40,49 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     )
 
     print("Starting evaluation!\n")
-    correct = 0
-    count = 0
-    connected_false_positives = 0
-    connected_false_negatives = 0
-    connected_match = 0
-    confusion_matrix = np.zeros((model.max_distance, model.max_distance))
+    count_connected = 0
+    count_unconnected = 0
+    mean_absolute_error = 0
+    mean_relative_error = 0
+    mean_unconnected_prediction = 0
 
     with torch.no_grad():
         for data in tqdm(dataset_loader):
             s, t, labels, _ = dataset.process_batch(data, device)
             out = model(s, t)
-            preds = torch.argmax(out, dim=1)
 
-            correct += torch.sum(preds == labels).item()
-            count += len(labels)
+            connected_mask = labels != 0
+            count_connected += torch.sum(connected_mask).item()
+            count_unconnected += len(labels) - count_connected
 
-            connected_false_positives += torch.sum((preds != 0) & (labels == 0)).item()
-            connected_false_negatives += torch.sum((preds == 0) & (labels != 0)).item()
-            connected_match += torch.sum((preds != 0) & (labels != 0)).item()
+            mean_absolute_error += torch.sum(
+                torch.where(
+                    connected_mask,
+                    torch.abs(out - labels),
+                    0.0,
+                )
+            ).item()
+            mean_relative_error += torch.sum(
+                torch.where(
+                    connected_mask,
+                    torch.abs(out - labels) / torch.where(connected_mask, labels, 1.0),
+                    0.0,
+                )
+            ).item()
+            mean_unconnected_prediction += torch.sum(
+                torch.where(
+                    connected_mask,
+                    0.0,
+                    out,
+                )
+            ).item()
+    mean_absolute_error /= count_connected
+    mean_relative_error /= count_connected
+    mean_unconnected_prediction /= count_unconnected
 
-            confusion_matrix += sklearn.metrics.confusion_matrix(
-                labels.detach().cpu(),
-                preds.detach().cpu(),
-                labels=list(range(model.max_distance)),
-            )
-    accuracy = correct / count
-    connected_false_positives /= count
-    connected_false_negatives /= count
-    connected_match /= count
-    confusion_matrix /= np.sum(confusion_matrix, axis=1, keepdims=True)
-
-    print(f"    Accuracy:     {accuracy}")
-    print(f"    Connected FP: {connected_false_positives}")
-    print(f"    Connected FN: {connected_false_negatives}")
-    print(f"    Connected EQ: {connected_match}")
-    print(f"    Confusion Matrix:")
-    print(confusion_matrix)
-
-    disp = sklearn.metrics.ConfusionMatrixDisplay(100 * confusion_matrix)
-    disp.plot(include_values=True, values_format=".0f")
-    plt.savefig(args.output)
+    print(f"    Mean Absolute Error:         {mean_absolute_error}")
+    print(f"    Mean Relative Error:         {mean_relative_error}")
+    print(f"    Mean Unconnected Prediction: {mean_unconnected_prediction}")
 
 
 if __name__ == "__main__":
@@ -99,13 +101,6 @@ if __name__ == "__main__":
         type=int,
         help="How many BFS runs to use",
         default=None,
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Where to write the confusion matrix",
-        default="confusion_matrix.png",
     )
     parser.add_argument(
         "model",
