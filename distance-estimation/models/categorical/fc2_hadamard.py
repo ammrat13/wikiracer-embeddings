@@ -5,9 +5,9 @@ import torch
 from models.categorical import ICategoricalModelMetadata
 
 
-class FC2CEHadamardModelMetadata(ICategoricalModelMetadata):
+class CatFC2HadamardModelMetadata(ICategoricalModelMetadata):
     """
-    Model that uses multinomial logistic regression with element-wise
+    Model with a 2-layer fully-connected network with element-wise
     multiplication to combine features.
     """
 
@@ -27,13 +27,13 @@ class FC2CEHadamardModelMetadata(ICategoricalModelMetadata):
         self.hidden_length = args.hidden_length
 
     def get_model(self) -> torch.nn.Module:
-        return FC2CEHadamardModel(
+        return CatFC2HadamardModel(
             self.embedding_length, self.hidden_length, self.max_distance
         )
 
 
 @torch.compile
-class FC2CEHadamardModel(torch.nn.Module):
+class CatFC2HadamardModel(torch.nn.Module):
     embedding_length: int
     max_distance: int
 

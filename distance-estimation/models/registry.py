@@ -7,12 +7,12 @@ This has to go in a separate file due to circular imports.
 from typing import Type
 
 from models import IModelMetadata
-from models.categorical.logistic_mn_hadamard import LogisticMnHadamardModelMetadata
-from models.categorical.fc2_ce_hadamard import FC2CEHadamardModelMetadata
+from models.categorical.fc1_hadamard import CatFC1HadamardModelMetadata
+from models.categorical.fc2_hadamard import CatFC2HadamardModelMetadata
 from models.regression.fc2_hadamard import RegFC2HadamardModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
-    "logistic_mn-hadamard": LogisticMnHadamardModelMetadata,
-    "fc2_ce-hadamard": FC2CEHadamardModelMetadata,
+    "cat-fc1-hadamard": CatFC1HadamardModelMetadata,
+    "cat-fc2-hadamard": CatFC2HadamardModelMetadata,
     "reg-fc2-hadamard": RegFC2HadamardModelMetadata,
 }
