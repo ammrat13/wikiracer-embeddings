@@ -71,60 +71,29 @@ def main(
         print(f"Epoch {epoch + 1} / {args.epochs}")
 
         train_loss = 0.0
-        train_correct = 0
-        train_count = 0
         model.train()
         for data in tqdm(train_loader):
             s, t, d, w = train_dataset.process_batch(data, device)
             optimizer.zero_grad()
-
             out = model(s, t)
             l = loss(out, d, w)
             l.backward()
             optimizer.step()
-
-            p = model_meta.extract_predictions(out)
             train_loss += l.item()
-            train_correct += torch.sum(p == d).item()
-            train_count += len(p)
-        train_accuracy = train_correct / train_count
         train_loss /= len(train_loader)
 
-        val_correct = 0
-        val_count = 0
         val_loss = 0.0
         model.eval()
         with torch.no_grad():
             for data in tqdm(val_loader):
                 s, t, d, w = val_dataset.process_batch(data, device)
-
                 out = model(s, t)
                 l = loss(out, d, w)
                 val_loss += l.item()
-
-                p = model_meta.extract_predictions(out)
-
-                val_correct += torch.sum(p == d).item()
-                val_count += len(p)
-
-                val_connected_false_positives += torch.sum((p != 0) & (d == 0)).item()
-                val_connected_false_negatives += torch.sum((p == 0) & (d != 0)).item()
-
-                mtch = (p != 0) & (d != 0)
-                val_connected_match += torch.sum(mtch).item()
-                val_absolute_error += torch.sum(
-                    torch.abs(torch.where(mtch, p - d, 0))
-                ).item()
-                val_relative_error += torch.sum(
-                    torch.abs(torch.where(mtch, p - d, 0) / torch.where(d != 0, d, 1))
-                ).item()
-        val_accuracy = val_correct / val_count
         val_loss /= len(val_loader)
 
         print(f"    Training loss:           {train_loss}")
-        print(f"    Training accuracy:       {train_accuracy}")
         print(f"    Validation loss:         {val_loss}")
-        print(f"    Validation accuracy:     {val_accuracy}")
         print()
 
         # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
@@ -135,7 +104,6 @@ def main(
                 "optimizer_state_dict": optimizer.state_dict(),
                 "train_loss": train_loss,
                 "val_loss": val_loss,
-                "val_accuracy": val_accuracy,
             },
             args.checkpoint_output,
         )

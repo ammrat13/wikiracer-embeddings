@@ -9,8 +9,10 @@ from typing import Type
 from models import IModelMetadata
 from models.categorical.logistic_mn_hadamard import LogisticMnHadamardModelMetadata
 from models.categorical.fc2_ce_hadamard import FC2CEHadamardModelMetadata
+from models.regression.fc2_hadamard import RegFC2HadamardModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
     "logistic_mn-hadamard": LogisticMnHadamardModelMetadata,
     "fc2_ce-hadamard": FC2CEHadamardModelMetadata,
+    "reg-fc2-hadamard": RegFC2HadamardModelMetadata,
 }
