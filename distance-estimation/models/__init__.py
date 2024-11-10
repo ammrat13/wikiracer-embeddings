@@ -6,6 +6,21 @@ import argparse
 import torch
 
 
+class IModel(abc.ABC, torch.nn.Module):
+    """
+    Base class for distance estimation models. They need to have some common
+    fields for evaluation.
+    """
+
+    embedding_length: int
+    max_distance: int
+
+    def __init__(self, embedding_length: int, max_distance: int):
+        super().__init__()
+        self.embedding_length = embedding_length
+        self.max_distance = max_distance
+
+
 class IModelMetadata(abc.ABC):
     """
     Metadata for a distance estimation model. This includes the model itself,
@@ -36,7 +51,7 @@ class IModelMetadata(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_model(self) -> torch.nn.Module:
+    def get_model(self) -> IModel:
         """
         Returns the model.
 

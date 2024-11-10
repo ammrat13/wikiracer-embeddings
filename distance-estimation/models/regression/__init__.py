@@ -18,10 +18,6 @@ class IRegressionModelMetadata(IModelMetadata):
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
         self.max_distance = args.max_dist
 
-    @abc.abstractmethod
-    def get_model(self) -> torch.nn.Module:
-        pass
-
     def get_loss(self) -> torch.nn.Module:
         return RegressionModelLoss(self.max_distance)
 
@@ -38,7 +34,6 @@ class RegressionModelLoss(torch.nn.Module):
         super().__init__()
         self.max_distance = max_distance
         self.cutoff = float(max_distance - 1)
-        self.mse = torch.nn.MSELoss()
 
     def forward(
         self,

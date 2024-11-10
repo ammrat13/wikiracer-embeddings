@@ -2,6 +2,7 @@ import argparse
 
 import torch
 
+from models import IModel
 from models.categorical import ICategoricalModelMetadata
 
 
@@ -15,19 +16,15 @@ class CatFC1HadamardModelMetadata(ICategoricalModelMetadata):
         super().__init__(args, class_weights)
         self.embedding_length = args.embedding_length
 
-    def get_model(self) -> torch.nn.Module:
+    def get_model(self) -> IModel:
         return CatFC1HadamardModel(self.embedding_length, self.max_distance)
 
 
 @torch.compile
-class CatFC1HadamardModel(torch.nn.Module):
-    embedding_length: int
-    max_distance: int
+class CatFC1HadamardModel(IModel):
 
     def __init__(self, embedding_length: int, max_distance: int):
-        super().__init__()
-        self.embedding_length = embedding_length
-        self.max_distance = max_distance
+        super().__init__(embedding_length, max_distance)
         self.linear = torch.nn.Linear(embedding_length, max_distance)
 
     def forward(self, s: torch.Tensor, t: torch.Tensor) -> torch.Tensor:

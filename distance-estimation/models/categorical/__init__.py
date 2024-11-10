@@ -22,10 +22,6 @@ class ICategoricalModelMetadata(IModelMetadata):
         self.max_distance = args.max_dist
         self.class_weights = class_weights
 
-    @abc.abstractmethod
-    def get_model(self) -> torch.nn.Module:
-        pass
-
     def get_loss(self) -> torch.nn.Module:
         return CategoricalModelLoss(self.max_distance, self.class_weights)
 
