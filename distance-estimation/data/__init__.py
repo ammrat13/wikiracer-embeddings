@@ -83,7 +83,9 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
             num, _ = np.histogram(arr, bins=np.arange(max_distance + 1))
             counts += num.astype(np.uint64)
         self.max_distance = max_distance
-        self.class_weights = torch.from_numpy(np.sum(counts) / counts)
+        self.class_weights = torch.from_numpy(
+            (np.sum(counts) / self.max_distance) / counts
+        )
 
     def __len__(self):
         return self.T
