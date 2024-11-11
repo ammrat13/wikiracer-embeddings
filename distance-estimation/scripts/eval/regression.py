@@ -112,7 +112,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
         )
         ax.set_title(f"Distance Histogram for \\(d = {it}\\)")
         ax.set_xlabel("Predicted Distance")
-        ax.set_ylabel("Probability Mass")
+        ax.set_ylabel("Probability Density")
         fig.savefig(
             os.path.join(args.histogram_dir, f"histogram_{it}.png"),
             bbox_inches="tight",
