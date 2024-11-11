@@ -77,7 +77,8 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
 
         # Do weighting
         counts = np.zeros(max_distance, dtype=np.uint64)
-        for chunk in self.hdf5_file["distance"].iter_chunks():
+        selexp = np.s_[0 : self.T, 0 : self.N - 1]
+        for chunk in self.hdf5_file["distance"].iter_chunks(sel=selexp):
             arr = self.hdf5_file["distance"][chunk]
             arr = np.where(arr >= max_distance, 0, arr)
             num, _ = np.histogram(arr, bins=np.arange(max_distance + 1))
