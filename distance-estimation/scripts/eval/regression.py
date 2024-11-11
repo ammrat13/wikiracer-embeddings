@@ -50,30 +50,34 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
         for data in tqdm(dataset_loader):
             s, t, labels, _ = dataset.process_batch(data, device)
             out = model(s, t)
+            pred = out + 1.0
 
-            connected_mask = labels != 0
-            count_connected += torch.sum(connected_mask).item()
-            count_unconnected += len(labels) - count_connected
+            batch_connected_mask = labels != 0
+            batch_connected = torch.sum(batch_connected_mask).item()
+            batch_unconnected = len(labels) - batch_connected
+            count_connected += batch_connected
+            count_unconnected += batch_unconnected
 
             mean_absolute_error += torch.sum(
                 torch.where(
-                    connected_mask,
-                    torch.abs(out - labels),
+                    batch_connected_mask,
+                    torch.abs(pred - labels),
                     0.0,
                 )
             ).item()
             mean_relative_error += torch.sum(
                 torch.where(
-                    connected_mask,
-                    torch.abs(out - labels) / torch.where(connected_mask, labels, 1.0),
+                    batch_connected_mask,
+                    torch.abs(pred - labels)
+                    / torch.where(batch_connected_mask, labels, 1.0),
                     0.0,
                 )
             ).item()
             mean_unconnected_prediction += torch.sum(
                 torch.where(
-                    connected_mask,
+                    batch_connected_mask,
                     0.0,
-                    out,
+                    pred,
                 )
             ).item()
     mean_absolute_error /= count_connected
