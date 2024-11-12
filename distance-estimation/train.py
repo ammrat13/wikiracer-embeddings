@@ -54,6 +54,9 @@ def main(
     model = model_meta.get_model().to(device)
     loss = model_meta.get_loss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", threshold=1e-3
+    )
 
     print("Starting training loop!\n")
     start_epoch = 0
@@ -64,6 +67,7 @@ def main(
         )
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
         print(f"Continuing from epoch {start_epoch + 1}")
 
@@ -94,6 +98,7 @@ def main(
 
         print(f"    Training loss:           {train_loss}")
         print(f"    Validation loss:         {val_loss}")
+        print(f"    Learning rate:           {scheduler.get_last_lr()}")
         print()
 
         # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
@@ -102,6 +107,7 @@ def main(
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
+                "scheduler_state_dict": scheduler.state_dict(),
                 "train_loss": train_loss,
                 "val_loss": val_loss,
             },
@@ -109,6 +115,8 @@ def main(
         )
         # Also save the script for the model.
         torch.jit.script(model).save(args.script_output)
+
+        scheduler.step(val_loss)
 
 
 if __name__ == "__main__":
