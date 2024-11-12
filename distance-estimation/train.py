@@ -53,7 +53,7 @@ def main(
     model_meta = model_meta_cls(args, train_dataset.class_weights)
     model = model_meta.get_model().to(device)
     loss = model_meta.get_loss().to(device)
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     print("Starting training loop!\n")
     start_epoch = 0
@@ -144,6 +144,12 @@ if __name__ == "__main__":
         type=int,
         help="Number of features to use",
         default=512,
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        help="Learning rate",
+        default=0.001,
     )
     parser.add_argument(
         "--training-runs",
