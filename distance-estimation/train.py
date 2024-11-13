@@ -214,7 +214,12 @@ def main(
 
         # Save to W&B
         art = wandb.Artifact(
-            name=args.model_name, type="model", metadata=dict(run.config)
+            name=args.model_name,
+            type="model",
+            metadata={
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+            },
         )
         art.add_file(args.checkpoint_output, name="checkpoint.pt")
         art.add_file(args.script_output, name="model.scr.pt")
