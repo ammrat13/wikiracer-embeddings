@@ -13,6 +13,7 @@ torch = "*"
 scipy = "*"
 scikit-learn = "*"
 matplotlib = "*"
+wandb = "*"
 
 [dev-packages]
 

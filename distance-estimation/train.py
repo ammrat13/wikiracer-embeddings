@@ -7,58 +7,111 @@ from typing import Any, Type
 
 import torch
 from tqdm import tqdm
+import wandb
 import yaml
 
 from data import DistanceEstimationDataset
-from models import IModelMetadata
+from models import IModelMetadata, IModel
 from models.registry import MODEL_REGISTRY
 
 
-def main(
-    args: argparse.Namespace,
-    config: dict[str, Any],
-    model_meta_cls: Type[IModelMetadata],
-) -> None:
-
+def torch_setup() -> torch.device:
+    """Do one-time setup for PyTorch."""
+    # Silence warning about performance
     torch.set_float32_matmul_precision("high")
+    # Use GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    return device
 
-    # Note that we can't shuffle the datasets, nor can we do the traditional
-    # splitting. Just holding the random indicies in memory is too much. So, we
-    # have separate files for each set.
-    dataset_base = config["training-data"]["distance-estimation"]
+
+def wandb_setup(
+    args: argparse.Namespace, model_meta: IModelMetadata
+) -> wandb.sdk.wandb_run.Run:
+    """Do one-time setup for Weights & Biases."""
+    return wandb.init(
+        project="cs229-distance-estimation",
+        config={
+            "training_runs": args.training_runs,
+            "validation_runs": args.validation_runs,
+            "max_dist": args.max_dist,
+            "embedding_length": args.embedding_length,
+            "lr": args.lr,
+            "epochs": args.epochs,
+            "model_name": args.model_name,
+            "model_config": model_meta.get_wandb_config(),
+        },
+    )
+
+
+def get_data(args: argparse.Namespace, config: dict[str, Any]) -> tuple[
+    DistanceEstimationDataset,
+    DistanceEstimationDataset,
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+]:
+    """
+    Get datasets and loaders for training and validation data.
+
+    The loaders do not shuffle the data. It's in batches of BFS iterations
+    anyway, and the nodes were selected randomly.
+    """
+
+    dataset_path = config["training-data"]["distance-estimation"]
+    embeddings_path = config["data"]["embeddings"][1536]
+
+    DATASET_ARGS = {
+        "embedding_filename": embeddings_path,
+        "max_distance": args.max_dist,
+        "embedding_length": args.embedding_length,
+    }
+    LOADER_ARGS = {
+        "num_workers": 2,
+        "pin_memory": True,
+    }
+
     train_dataset = DistanceEstimationDataset(
-        os.path.join(dataset_base, args.train_name),
-        config["data"]["embeddings"][1536],
-        max_distance=args.max_dist,
+        os.path.join(dataset_path, args.train_name),
         num_runs=args.training_runs,
-        embedding_length=args.embedding_length,
+        **DATASET_ARGS,
     )
     val_dataset = DistanceEstimationDataset(
-        os.path.join(dataset_base, args.validation_name),
-        config["data"]["embeddings"][1536],
-        max_distance=args.max_dist,
+        os.path.join(dataset_path, args.validation_name),
         num_runs=args.validation_runs,
-        embedding_length=args.embedding_length,
+        **DATASET_ARGS,
     )
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, num_workers=2, pin_memory=True
-    )
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, num_workers=2, pin_memory=True
-    )
+    train_loader = torch.utils.data.DataLoader(train_dataset, **LOADER_ARGS)
+    val_loader = torch.utils.data.DataLoader(val_dataset, **LOADER_ARGS)
 
-    model_meta = model_meta_cls(args, train_dataset.class_weights)
+    return train_dataset, val_dataset, train_loader, val_loader
+
+
+def get_model(
+    args: argparse.Namespace,
+    device: torch.device,
+    model_meta_cls: Type[IModelMetadata],
+    class_weights: torch.Tensor,
+) -> tuple[
+    int,
+    IModelMetadata,
+    IModel,
+    torch.nn.Module,
+    torch.optim.Optimizer,
+    torch.optim.lr_scheduler.LRScheduler,
+]:
+    """
+    Create the model, and all of the associated training objects. Load from
+    checkpoint if needed.
+    """
+
+    model_meta = model_meta_cls(args, class_weights)
     model = model_meta.get_model().to(device)
     loss = model_meta.get_loss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", threshold=1e-3
+        optimizer, mode="min", threshold=1e-3, patience=5
     )
 
-    print("Starting training loop!\n")
     start_epoch = 0
     if args.continue_training:
         checkpoint = torch.load(
@@ -69,6 +122,31 @@ def main(
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
+
+    return start_epoch, model_meta, model, loss, optimizer, scheduler
+
+
+def main(
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    model_meta_cls: Type[IModelMetadata],
+) -> None:
+
+    device = torch_setup()
+    print(f"Using device: {device}")
+
+    train_dset, val_dset, train_ldr, val_ldr = get_data(args, config)
+    start_epoch, model_meta, model, loss, optimizer, scheduler = get_model(
+        args,
+        device,
+        model_meta_cls,
+        train_dset.class_weights,
+    )
+
+    run = wandb_setup(args, model_meta)
+
+    print("Starting training loop!\n")
+    if start_epoch != 0:
         print(f"Continuing from epoch {start_epoch + 1}")
 
     for epoch in range(start_epoch, args.epochs):
@@ -76,30 +154,38 @@ def main(
 
         train_loss = 0.0
         model.train()
-        for data in tqdm(train_loader):
-            s, t, d, w = train_dataset.process_batch(data, device)
+        for data in tqdm(train_ldr):
+            s, t, d, w = train_dset.process_batch(data, device)
             optimizer.zero_grad()
             out = model(s, t)
             l = loss(out, d, w)
             l.backward()
             optimizer.step()
             train_loss += l.item()
-        train_loss /= len(train_loader)
+        train_loss /= len(train_ldr)
 
         val_loss = 0.0
         model.eval()
         with torch.no_grad():
-            for data in tqdm(val_loader):
-                s, t, d, w = val_dataset.process_batch(data, device)
+            for data in tqdm(val_ldr):
+                s, t, d, w = val_dset.process_batch(data, device)
                 out = model(s, t)
                 l = loss(out, d, w)
                 val_loss += l.item()
-        val_loss /= len(val_loader)
+        val_loss /= len(val_ldr)
 
         print(f"    Training loss:           {train_loss}")
         print(f"    Validation loss:         {val_loss}")
         print(f"    Learning rate:           {scheduler.get_last_lr()}")
         print()
+        run.log(
+            {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "epoch": epoch,
+                "learning_rate": scheduler.get_last_lr()[0],
+            }
+        )
 
         # See: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-a-general-checkpoint-for-inference-and-or-resuming-training
         torch.save(
@@ -117,6 +203,8 @@ def main(
         torch.jit.script(model).save(args.script_output)
 
         scheduler.step(val_loss)
+
+    wandb.finish()
 
 
 if __name__ == "__main__":
@@ -204,5 +292,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     config = yaml.safe_load(args.config)
+
+    # This wasn't part of the argparse command-line arguments, so we have to add
+    # it manually.
+    args.model_name = model_name
 
     main(args, config, model_meta_cls)

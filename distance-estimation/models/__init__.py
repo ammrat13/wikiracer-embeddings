@@ -50,6 +50,15 @@ class IModelMetadata(abc.ABC):
         """
         pass
 
+    def get_wandb_config(self) -> dict[str, any]:
+        """
+        Get the configuration for Weights & Biases.
+
+        This should return a dictionary that can be passed to wandb.init(). It
+        will be placed inside the global options.
+        """
+        return {}
+
     @abc.abstractmethod
     def get_model(self) -> IModel:
         """

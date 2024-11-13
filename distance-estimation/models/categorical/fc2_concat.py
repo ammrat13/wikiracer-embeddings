@@ -32,6 +32,9 @@ class CatFC2ConcatModelMetadata(ICategoricalModelMetadata):
             self.embedding_length, self.max_distance, self.hidden_length
         )
 
+    def get_wandb_config(self) -> dict[str, any]:
+        return {"hidden_length": self.hidden_length}
+
 
 @torch.compile
 class CatFC2ConcatModel(IModel):
