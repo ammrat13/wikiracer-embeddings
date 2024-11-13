@@ -19,6 +19,10 @@ training-data:
   link-prediction: /path/to/link-prediction/
   distance-estimation: /path/to/distance-estimation/
 
+wandb:
+  entity: ammrat13-team
+  projects:
+    distance-estimation: cs229-distance-estimation
 plotting:
   style: /path/to/style.mplstyle
 seed: 0x2290229022902290
