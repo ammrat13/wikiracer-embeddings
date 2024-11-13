@@ -212,6 +212,14 @@ def main(
         # Also save the script for the model.
         torch.jit.script(model).save(args.script_output)
 
+        # Save to W&B
+        art = wandb.Artifact(
+            name=args.model_name, type="model", metadata=dict(run.config)
+        )
+        art.add_file(args.checkpoint_output, name="checkpoint.pt")
+        art.add_file(args.script_output, name="model.scr.pt")
+        run.log_artifact(art)
+
         scheduler.step(val_loss)
 
     wandb.finish()
@@ -288,7 +296,7 @@ if __name__ == "__main__":
         "--script-output",
         type=str,
         help="Output model in TorchScript",
-        default="model.pt",
+        default="model.scr.pt",
     )
     parser.add_argument(
         "-k",
