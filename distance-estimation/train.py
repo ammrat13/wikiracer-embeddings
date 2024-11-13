@@ -28,14 +28,26 @@ def wandb_setup(
     args: argparse.Namespace, model_meta: IModelMetadata
 ) -> wandb.sdk.wandb_run.Run:
     """Do one-time setup for Weights & Biases."""
+
+    if args.continue_training:
+        checkpoint = torch.load(args.checkpoint_output, weights_only=True)
+        run_id = checkpoint["run_id"]
+        wandb.init(
+            project="cs229-distance-estimation",
+            group=args.model_name,
+            id=run_id,
+            resume="must",
+        )
+
     return wandb.init(
         project="cs229-distance-estimation",
+        group=args.model_name,
         config={
             "training_runs": args.training_runs,
             "validation_runs": args.validation_runs,
             "max_dist": args.max_dist,
             "embedding_length": args.embedding_length,
-            "lr": args.lr,
+            "learning_rate": args.learning_rate,
             "epochs": args.epochs,
             "model_name": args.model_name,
             "model_config": model_meta.get_wandb_config(),
@@ -107,17 +119,14 @@ def get_model(
     model_meta = model_meta_cls(args, class_weights)
     model = model_meta.get_model().to(device)
     loss = model_meta.get_loss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", threshold=1e-3, patience=5
     )
 
     start_epoch = 0
     if args.continue_training:
-        checkpoint = torch.load(
-            args.checkpoint_output,
-            weights_only=True,
-        )
+        checkpoint = torch.load(args.checkpoint_output, weights_only=True)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
@@ -191,6 +200,7 @@ def main(
         torch.save(
             {
                 "epoch": epoch,
+                "run_id": run.id,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "scheduler_state_dict": scheduler.state_dict(),
@@ -242,7 +252,7 @@ if __name__ == "__main__":
         default=512,
     )
     parser.add_argument(
-        "--lr",
+        "--learning-rate",
         type=float,
         help="Learning rate",
         default=0.001,
