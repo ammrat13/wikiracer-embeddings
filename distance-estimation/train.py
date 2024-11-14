@@ -43,8 +43,14 @@ def wandb_setup(
         project="cs229-distance-estimation",
         group=args.model_name,
         config={
-            "training_runs": args.training_runs,
-            "validation_runs": args.validation_runs,
+            "training_runs": {
+                "bfs": args.training_bfs,
+                "edge": args.training_edge,
+            },
+            "validation_runs": {
+                "bfs": args.validation_bfs,
+                "edge": args.validation_edge,
+            },
             "max_dist": args.max_dist,
             "embedding_length": args.embedding_length,
             "learning_rate": args.learning_rate,
@@ -55,7 +61,11 @@ def wandb_setup(
     )
 
 
-def get_data(args: argparse.Namespace, config: dict[str, Any]) -> tuple[
+def get_data(
+    args: argparse.Namespace,
+    config: dict[str, Any],
+    device: torch.device,
+) -> tuple[
     DistanceEstimationDataset,
     DistanceEstimationDataset,
     torch.utils.data.DataLoader,
@@ -73,8 +83,9 @@ def get_data(args: argparse.Namespace, config: dict[str, Any]) -> tuple[
 
     DATASET_ARGS = {
         "embedding_filename": embeddings_path,
-        "max_distance": args.max_dist,
         "embedding_length": args.embedding_length,
+        "max_distance": args.max_dist,
+        "device": device,
     }
     LOADER_ARGS = {
         "num_workers": 2,
@@ -83,12 +94,14 @@ def get_data(args: argparse.Namespace, config: dict[str, Any]) -> tuple[
 
     train_dataset = DistanceEstimationDataset(
         os.path.join(dataset_path, args.train_name),
-        num_runs=args.training_runs,
+        num_bfs=args.training_bfs,
+        num_edge=args.training_edge,
         **DATASET_ARGS,
     )
     val_dataset = DistanceEstimationDataset(
         os.path.join(dataset_path, args.validation_name),
-        num_runs=args.validation_runs,
+        num_bfs=args.validation_bfs,
+        num_edge=args.validation_edge,
         **DATASET_ARGS,
     )
 
@@ -144,7 +157,7 @@ def main(
     device = torch_setup()
     print(f"Using device: {device}")
 
-    train_dset, val_dset, train_ldr, val_ldr = get_data(args, config)
+    train_dset, val_dset, train_ldr, val_ldr = get_data(args, config, device)
     start_epoch, model_meta, model, loss, optimizer, scheduler = get_model(
         args,
         device,
@@ -164,7 +177,7 @@ def main(
         train_loss = 0.0
         model.train()
         for data in tqdm(train_ldr):
-            s, t, d, w = train_dset.process_batch(data, device)
+            s, t, d, w = train_dset.process_batch(data)
             optimizer.zero_grad()
             out = model(s, t)
             l = loss(out, d, w)
@@ -177,7 +190,7 @@ def main(
         model.eval()
         with torch.no_grad():
             for data in tqdm(val_ldr):
-                s, t, d, w = val_dset.process_batch(data, device)
+                s, t, d, w = val_dset.process_batch(data)
                 out = model(s, t)
                 l = loss(out, d, w)
                 val_loss += l.item()
@@ -271,16 +284,28 @@ if __name__ == "__main__":
         default=0.001,
     )
     parser.add_argument(
-        "--training-runs",
+        "--training-bfs",
         type=int,
         help="How many BFS runs to use during training",
         default=100,
     )
     parser.add_argument(
-        "--validation-runs",
+        "--training-edge",
+        type=int,
+        help="How many additional edges to use during training",
+        default=10000,
+    )
+    parser.add_argument(
+        "--validation-bfs",
         type=int,
         help="How many BFS runs to use during validation",
         default=10,
+    )
+    parser.add_argument(
+        "--validation-edge",
+        type=int,
+        help="How many additional edges to use during validation",
+        default=1000,
     )
     parser.add_argument(
         "-e",

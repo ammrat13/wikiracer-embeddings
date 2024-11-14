@@ -1,136 +1,173 @@
 """Provides a way to read the dataset from disk."""
 
+from collections import namedtuple
 from typing import Optional
 
 import h5py
 import numpy as np
 import torch
 
+CPUTrainingSample = namedtuple(
+    "CPUTrainingSample", ["source_idx", "target_idx", "distance"]
+)
+"""
+Training example represented on the CPU-side. These examples have to be
+post-processed on the GPU to be used in the model.
+"""
+
+GPUTrainingSample = namedtuple(
+    "GPUTrainingSample", ["source", "target", "distance", "weight"]
+)
+"""A training example represented on the GPU-side, ready for the model."""
+
 
 class DistanceEstimationDataset(torch.utils.data.Dataset):
     """
     Read the HDF5 dataset containing the distance estimation data.
 
-    The HDF5 file has 3 datasets:
-     * `source_idx` (T,): The source node indices.
-     * `target_idx` (T, N-1): The target node indices.
-     * `distance` (T, N-1): The distance between the source and target nodes.
-    Here, T is the number of samples and N is the number of nodes in the graph.
+    The HDF5 file has 4 datasets:
+     * `bfs/source-idx` (T,): The source node indices.
+     * `bfs/target-idx` (T, N-1): The target node indices.
+     * `bfs/distance` (T, N-1): The distance between the source and target.
+     * `edge/pairs` (K, 2): Edges to compensate for distance one.
+    Here, N is the number of nodes in the graph.
     """
-
-    TrainingInput = tuple[torch.Tensor, torch.Tensor]
-    TrainingSample = tuple[TrainingInput, torch.Tensor, torch.Tensor]
 
     def __init__(
         self,
         hdf5_filename: str,
         embedding_filename: str,
-        max_distance: int = 5,
-        num_runs: Optional[int] = None,
-        embedding_length: int = 512,
+        embedding_length: int,
+        max_distance: int,
+        num_bfs: Optional[int] = None,
+        num_edge: Optional[int] = None,
+        device: torch.device = torch.device("cpu"),
     ):
         """
         Initialize the dataset.
 
-        We also have to take the array of embeddings. We essentially do
-        dictionary coding on the embeddings. We also need to know how long the
-        embeddings should be so we can truncate them.
-
-        Additionally, we can optionally truncate the dataset to a certain number
-        of "runs" (i.e. T). This way, we can characterize the model's
-        performance on smaller datasets.
-
-        Finally, we have to set a maximum distance before we just declare nodes
-        unconnected.
+        We can optionally truncate the dataset to a certain number of runs and
+        edges. This is useful for debugging and testing. Also, we have to
+        specify the number of categories as `max_distance`. It is exclusive.
         """
 
-        # Read the Numpy array
+        # Handle the embeddings
         emb = np.load(embedding_filename)
         assert emb.ndim == 2
         assert emb.shape[1] >= embedding_length
         emb = emb[:, :embedding_length]
-        emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
-        self.embeddings = torch.from_numpy(emb)
-        self.embedding_length = embedding_length
+        self.embeddings = torch.from_numpy(emb).to(device)
+        self.embeddings /= torch.linalg.vector_norm(
+            self.embeddings, dim=1, keepdim=True
+        )
 
         # Read the HDF5 file
-        self.hdf5_file = h5py.File(hdf5_filename, "r")
-        assert len(self.hdf5_file["source-idx"].shape) == 1
-        assert len(self.hdf5_file["target-idx"].shape) == 2
-        assert len(self.hdf5_file["distance"].shape) == 2
-        assert (
-            self.hdf5_file["source-idx"].shape[0]
-            == self.hdf5_file["target-idx"].shape[0]
-        )
-        assert (
-            self.hdf5_file["target-idx"].shape[0] == self.hdf5_file["distance"].shape[0]
-        )
-        assert (
-            self.hdf5_file["target-idx"].shape[1] == self.hdf5_file["distance"].shape[1]
-        )
+        self.hdf5 = h5py.File(hdf5_filename, "r")
+        self.bfs = self.hdf5["bfs"]
+        self.edge = self.hdf5["edge"]
+        assert len(self.bfs["source-idx"].shape) == 1
+        assert len(self.bfs["target-idx"].shape) == 2
+        assert len(self.bfs["distance"].shape) == 2
+        assert len(self.edge["pairs"].shape) == 2
+        assert self.bfs["source-idx"].shape[0] == self.bfs["distance"].shape[0]
+        assert self.bfs["target-idx"].shape[0] == self.bfs["distance"].shape[0]
+        assert self.bfs["target-idx"].shape[1] == self.bfs["distance"].shape[1]
+        assert self.edge["pairs"].shape[1] == 2
 
         # Populate parameters about the dataset
-        self.T = self.hdf5_file["distance"].shape[0]
-        self.N = self.hdf5_file["distance"].shape[1] + 1
-        if num_runs is not None and self.T >= num_runs:
-            self.T = num_runs
+        self.N = self.bfs["distance"].shape[1] + 1
+        self.T = self.bfs["distance"].shape[0]
+        self.K = self.edge["pairs"].shape[0]
+        if num_bfs is not None and self.T >= num_bfs:
+            self.T = num_bfs
+        if num_edge is not None and self.K >= num_edge:
+            self.K = num_edge
 
-        # Do weighting
-        counts = np.zeros(max_distance, dtype=np.uint64)
-        selexp = np.s_[0 : self.T, 0 : self.N - 1]
-        for chunk in self.hdf5_file["distance"].iter_chunks(sel=selexp):
-            arr = self.hdf5_file["distance"][chunk]
+        # Compute class counts
+        self.class_counts = np.zeros(max_distance, dtype=np.uint64)
+        assert max_distance > 2
+        for cnk in self.bfs["distance"].iter_chunks(
+            sel=np.s_[0 : self.T, 0 : self.N - 1]
+        ):
+            arr = self.bfs["distance"][cnk]
             arr = np.where(arr >= max_distance, 0, arr)
             num, _ = np.histogram(arr, bins=np.arange(max_distance + 1))
-            counts += num.astype(np.uint64)
+            self.class_counts += num.astype(np.uint64)
+        self.class_counts[1] += self.K
+        # Compute class weights from counts
+        weight_const = np.sum(self.class_counts) / max_distance
+        self.class_weights = weight_const / self.class_counts
         self.max_distance = max_distance
-        self.class_weights = torch.from_numpy(
-            (np.sum(counts) / self.max_distance) / counts
-        )
+        # Move everything to the device
+        self.class_counts = torch.from_numpy(self.class_counts).to(device)
+        self.class_weights = torch.from_numpy(self.class_weights).to(device)
+
+        self.device = device
 
     def __len__(self):
-        return self.T
+        t_batches, k_batches = self._get_batchlen()
+        return t_batches + k_batches
 
-    def __getitem__(self, idx) -> TrainingSample:
+    def _get_batchlen(self) -> int:
+        t_batches = self.T
+        k_batches = self.K // (self.N - 1)
+        k_batches += 1 if self.K % (self.N - 1) != 0 else 0
+        return t_batches, k_batches
+
+    def __getitem__(self, idx) -> CPUTrainingSample:
         """
-        Get the idx-th sample from the dataset.
+        Return a single training sample.
 
-        Note that one sample coresponds to one source node and N-1 target nodes.
-        These will also be batched, so you have to flatten.
+        The source and target are left as indices. They will be "decompressed"
+        on the GPU. The same is done for the distance - the sample weight is
+        kept on the GPU too. Also, any data outside of the maximum distance will
+        be mapped to 0.
+
+        Finally, we make batches of size N-1. This really speeds up training,
+        since otherwise we're CPU bound on reading the data.
         """
+        t_batches, k_batches = self._get_batchlen()
+        if idx < t_batches:
+            return self._get_bfs(idx)
+        elif idx < t_batches + k_batches:
+            return self._get_edge(idx - t_batches)
+        else:
+            raise IndexError("Index out of range")
 
-        s_idx = self.hdf5_file["source-idx"][idx]
-        s = self.embeddings[s_idx].expand(self.N - 1, self.embedding_length)
+    def _get_bfs(self, i_T: int) -> CPUTrainingSample:
+        s = torch.from_numpy(self.bfs["source-idx"][i_T : i_T + 1])
+        t = torch.from_numpy(self.bfs["target-idx"][i_T, :])
+        d = torch.from_numpy(self.bfs["distance"][i_T, :])
 
-        t_idx = self.hdf5_file["target-idx"][idx]
-        t = torch.index_select(self.embeddings, 0, torch.from_numpy(t_idx).long())
+        s = s.expand(self.N - 1)
+        d[d >= self.max_distance] = 0
+        return CPUTrainingSample(s, t, d)
 
-        d = self.hdf5_file["distance"][idx]
-        d = np.where(d >= self.max_distance, 0, d)
-        d = torch.from_numpy(d).long()
+    def _get_edge(self, i_Kb: int) -> CPUTrainingSample:
+        i_K0 = i_Kb * (self.N - 1)
+        i_K1 = min(i_K0 + (self.N - 1), self.K)
+        i_Klen = i_K1 - i_K0
+        assert i_Klen > 0
 
-        w_idx = torch.where(d < self.max_distance, d, 0)
-        w = torch.index_select(self.class_weights, 0, w_idx)
+        s = torch.from_numpy(self.edge["pairs"][i_K0:i_K1, 0])
+        t = torch.from_numpy(self.edge["pairs"][i_K0:i_K1, 1])
+        return CPUTrainingSample(s, t, torch.ones(i_Klen, dtype=torch.uint8))
 
-        return ((s, t), d, w)
-
-    def process_batch(self, data: TrainingSample, device: torch.device):
+    def process_batch(self, batch: CPUTrainingSample) -> GPUTrainingSample:
         """
-        Flatten the batch of data into the format expected by the model. This
-        will also move the data to the device.
+        Expand the source and target indices, and get the sample weights.
         """
+        s, t, d = batch
+        s = s.view(-1)
+        t = t.view(-1)
+        d = d.view(-1)
 
-        inp, d, w = data
-        s, t = inp
+        s = s.to(self.device).long()
+        t = t.to(self.device).long()
+        d = d.to(self.device).long()
 
-        s = torch.flatten(s, start_dim=0, end_dim=1)
-        t = torch.flatten(t, start_dim=0, end_dim=1)
-        d = torch.flatten(d, start_dim=0, end_dim=1)
-        w = torch.flatten(w, start_dim=0, end_dim=1)
+        s = torch.index_select(self.embeddings, 0, s)
+        t = torch.index_select(self.embeddings, 0, t)
+        w = torch.index_select(self.class_weights, 0, d)
 
-        s = s.to(device)
-        t = t.to(device)
-        d = d.to(device)
-        w = w.to(device)
-
-        return s, t, d, w
+        return GPUTrainingSample(s, t, d, w)
