@@ -51,10 +51,12 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
             obfs = f.create_group("bfs")
             oedge = f.create_group("edge")
 
-            obfs.create_dataset("source-idx", (tlen,), dtype=np.uint32)
-            obfs.create_dataset("target-idx", (tlen, N - 1), dtype=np.uint32)
-            obfs.create_dataset("distance", (tlen, N - 1), dtype=np.uint8)
-            oedge.create_dataset("pairs", (klen, 2), dtype=np.uint32)
+            obfs.create_dataset("source-idx", (tlen,), dtype=np.uint32, chunks=True)
+            obfs.create_dataset(
+                "target-idx", (tlen, N - 1), dtype=np.uint32, chunks=True
+            )
+            obfs.create_dataset("distance", (tlen, N - 1), dtype=np.uint8, chunks=True)
+            oedge.create_dataset("pairs", (klen, 2), dtype=np.uint32, chunks=True)
 
             copychunks(
                 bfs["source-idx"], obfs["source-idx"], [tslice.start], np.s_[tslice]
