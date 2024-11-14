@@ -1,8 +1,9 @@
 """Train a distance estimation model from the registry."""
 
 import argparse
-import sys
+import math
 import os
+import sys
 from typing import Any, Type
 
 import torch
@@ -239,7 +240,10 @@ def main(
         run.log_artifact(art)
 
         # Early stopping when the learning rate gets too low
-        if args.learning_rate / scheduler.get_last_lr()[0] >= 1.0e4:
+        if (
+            math.log10(args.learning_rate) - math.log10(scheduler.get_last_lr()[0])
+            >= 4.0
+        ):
             print("Learning rate too low. Stopping training.")
             break
         scheduler.step(val_loss)
@@ -291,25 +295,25 @@ if __name__ == "__main__":
         "--training-bfs",
         type=int,
         help="How many BFS runs to use during training",
-        default=100,
+        default=None,
     )
     parser.add_argument(
         "--training-edge",
         type=int,
         help="How many additional edges to use during training",
-        default=10000,
+        default=None,
     )
     parser.add_argument(
         "--validation-bfs",
         type=int,
         help="How many BFS runs to use during validation",
-        default=10,
+        default=None,
     )
     parser.add_argument(
         "--validation-edge",
         type=int,
         help="How many additional edges to use during validation",
-        default=1000,
+        default=None,
     )
     parser.add_argument(
         "-e",

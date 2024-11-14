@@ -31,7 +31,7 @@ class CatFC3ConcatModelMetadata(ICategoricalModelMetadata):
             "--dropout-rate",
             type=float,
             help="Dropout rate for the model",
-            default=0.2,
+            default=0.0,
         )
 
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
