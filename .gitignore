@@ -5,3 +5,6 @@
 
 # Ignore Python compiled files
 __pycache__/
+
+# Ignore any background tasks
+nohup.out
