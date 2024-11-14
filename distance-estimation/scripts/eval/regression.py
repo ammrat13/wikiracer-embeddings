@@ -10,6 +10,7 @@ import numpy as np
 import sklearn.metrics
 import torch
 from tqdm import tqdm
+import wandb
 import yaml
 
 # See: https://stackoverflow.com/a/49155631
@@ -23,7 +24,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    model = torch.jit.load(args.model)
+    model = torch.jit.load(args.model_path)
     model.eval()
     model.to(device)
 
@@ -31,9 +32,11 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     dataset = DistanceEstimationDataset(
         os.path.join(dataset_base, args.dataset),
         config["data"]["embeddings"][1536],
-        max_distance=model.max_distance,
-        num_runs=args.runs,
         embedding_length=model.embedding_length,
+        max_distance=model.max_distance,
+        num_bfs=args.bfs,
+        num_edge=args.edges,
+        device=device,
     )
     dataset_loader = torch.utils.data.DataLoader(
         dataset, num_workers=2, pin_memory=True
@@ -51,7 +54,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
 
     with torch.no_grad():
         for data in tqdm(dataset_loader):
-            s, t, labels, _ = dataset.process_batch(data, device)
+            s, t, labels, _ = dataset.process_batch(data)
             out = model(s, t)
             pred = out + 1.0
 
@@ -130,10 +133,15 @@ if __name__ == "__main__":
         default="config.yaml",
     )
     parser.add_argument(
-        "-r",
-        "--runs",
+        "--bfs",
         type=int,
         help="How many BFS runs to use",
+        default=None,
+    )
+    parser.add_argument(
+        "--edges",
+        type=int,
+        help="How many additional edges to use",
         default=None,
     )
     parser.add_argument(
@@ -151,9 +159,9 @@ if __name__ == "__main__":
         default=1000,
     )
     parser.add_argument(
-        "model",
-        type=argparse.FileType("rb"),
-        help="Path to the model TorchScript file",
+        "artifact",
+        type=str,
+        help="Name of the W&B model artifact",
     )
     parser.add_argument(
         "dataset",
@@ -164,5 +172,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = yaml.safe_load(args.config)
     plt.style.use(config["plotting"]["style"])
+
+    api = wandb.Api()
+    entity = config["wandb"]["entity"]
+    project = config["wandb"]["projects"]["distance-estimation"]
+    artifact = api.artifact(f"{entity}/{project}/{args.artifact}")
+    model_folder = artifact.download(path_prefix="model.scr.pt")
+    args.model_path = os.path.join(model_folder, "model.scr.pt")
 
     main(args, config)
