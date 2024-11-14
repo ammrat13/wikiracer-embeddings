@@ -238,6 +238,10 @@ def main(
         art.add_file(args.script_output, name="model.scr.pt")
         run.log_artifact(art)
 
+        # Early stopping when the learning rate gets too low
+        if args.learning_rate / scheduler.get_last_lr()[0] >= 1.0e4:
+            print("Learning rate too low. Stopping training.")
+            break
         scheduler.step(val_loss)
 
     wandb.finish()
