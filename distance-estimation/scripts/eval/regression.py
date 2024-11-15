@@ -50,7 +50,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     mean_unconnected_prediction = 0
 
     hist_bins = np.linspace(0, model.max_distance, args.histogram_bins + 1)
-    histogram = np.zeros((model.max_distance - 1, args.histogram_bins), dtype=np.int32)
+    histogram = np.zeros((model.max_distance, args.histogram_bins), dtype=np.int32)
 
     with torch.no_grad():
         for data in tqdm(dataset_loader):
@@ -87,13 +87,13 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
                 )
             ).item()
 
-            for it in range(1, model.max_distance):
+            for it in range(model.max_distance):
                 mask = labels == it
                 batch_hist, _ = np.histogram(
                     pred[mask].cpu().numpy(),
                     bins=hist_bins,
                 )
-                histogram[it - 1] += batch_hist
+                histogram[it] += batch_hist
 
     mean_absolute_error /= count_connected
     mean_relative_error /= count_connected
@@ -106,11 +106,11 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     histogram = histogram.astype(np.float32)
     histogram /= np.sum(histogram, axis=1, keepdims=True)
     histogram *= args.histogram_bins / model.max_distance
-    for it in range(1, model.max_distance):
+    for it in range(model.max_distance):
         fig, ax = plt.subplots()
         ax.bar(
             hist_bins[:-1],
-            histogram[it - 1],
+            histogram[it],
             width=model.max_distance / args.histogram_bins,
             align="edge",
         )
