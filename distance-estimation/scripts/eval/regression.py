@@ -111,6 +111,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
         ax.bar(
             hist_bins[:-1],
             histogram[it - 1],
+            width=model.max_distance / args.histogram_bins,
             align="edge",
         )
         ax.set_title(f"Distance Histogram for \\(d = {it}\\)")
