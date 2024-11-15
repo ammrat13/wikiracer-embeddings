@@ -19,7 +19,7 @@ class RegFC3ConcatModelMetadata(IRegressionModelMetadata):
             "--hidden-length-1",
             type=int,
             help="Length of the first hidden layer",
-            default=64,
+            default=128,
         )
         parser.add_argument(
             "--hidden-length-2",
