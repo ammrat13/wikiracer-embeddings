@@ -28,12 +28,10 @@ class IRegressionModelMetadata(IModelMetadata):
 @torch.compile
 class RegressionModelLoss(torch.nn.Module):
     max_distance: int
-    cutoff: int
 
     def __init__(self, max_distance: int):
         super().__init__()
         self.max_distance = max_distance
-        self.cutoff = max_distance - 2
 
     def forward(
         self,
@@ -41,7 +39,7 @@ class RegressionModelLoss(torch.nn.Module):
         labels: torch.Tensor,
         sample_weights: torch.Tensor,
     ) -> torch.Tensor:
-        targ = torch.where(labels == 0, self.cutoff, labels - 1)
+        targ = torch.where(labels == 0, self.max_distance - 1, labels - 1)
         sqer = (output - targ) ** 2
         return torch.mean(
             sample_weights
