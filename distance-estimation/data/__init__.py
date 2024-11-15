@@ -41,7 +41,6 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         max_distance: int,
         num_bfs: Optional[int] = None,
         num_edge: Optional[int] = None,
-        unconnected_weight_factor: float = 1.0,
         device: torch.device = torch.device("cpu"),
     ):
         """
@@ -99,8 +98,6 @@ class DistanceEstimationDataset(torch.utils.data.Dataset):
         weight_const = np.sum(self.class_counts) / max_distance
         self.class_weights = weight_const / self.class_counts
         self.max_distance = max_distance
-        # Decrease the weight of unconnected nodes
-        self.class_weights[0] *= unconnected_weight_factor
         # Move everything to the device
         self.class_counts = torch.from_numpy(self.class_counts).to(device)
         self.class_weights = torch.from_numpy(self.class_weights).to(device)

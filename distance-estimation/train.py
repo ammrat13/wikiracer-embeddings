@@ -55,7 +55,6 @@ def wandb_setup(
             "max_dist": args.max_dist,
             "embedding_length": args.embedding_length,
             "learning_rate": args.learning_rate,
-            "unconnected_weight_factor": args.unconnected_weight_factor,
             "epochs": args.epochs,
             "model_name": args.model_name,
             "model_config": model_meta.get_wandb_config(),
@@ -87,7 +86,6 @@ def get_data(
         "embedding_filename": embeddings_path,
         "embedding_length": args.embedding_length,
         "max_distance": args.max_dist,
-        "unconnected_weight_factor": args.unconnected_weight_factor,
         "device": device,
     }
     LOADER_ARGS = {
@@ -316,12 +314,6 @@ if __name__ == "__main__":
         type=int,
         help="How many additional edges to use during validation",
         default=None,
-    )
-    parser.add_argument(
-        "--unconnected-weight-factor",
-        type=float,
-        help="Factor to multiply the weight of unconnected nodes",
-        default=1.0,
     )
     parser.add_argument(
         "-e",
