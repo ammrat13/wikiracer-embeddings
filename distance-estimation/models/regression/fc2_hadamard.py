@@ -44,8 +44,7 @@ class RegFC2HadamardModel(IModel):
         self.hidden_linear = torch.nn.Linear(embedding_length, hidden_length)
         self.hidden_values = torch.nn.ReLU()
         self.output_linear = torch.nn.Linear(hidden_length, 1)
-        self.output_values = torch.nn.Softplus()
-        self.output_flat = torch.nn.Flatten(0)
+        self.output_values = torch.nn.Flatten(0)
 
     def forward(self, s: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         x = s * t
@@ -53,5 +52,4 @@ class RegFC2HadamardModel(IModel):
         x = self.hidden_values(x)
         x = self.output_linear(x)
         x = self.output_values(x)
-        x = self.output_flat(x)
         return x

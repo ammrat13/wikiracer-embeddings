@@ -65,8 +65,7 @@ class RegFC3ConcatModel(IModel):
         self.hidden_2_linear = torch.nn.Linear(hidden_length_1, hidden_length_2)
         self.hidden_2_values = torch.nn.ReLU()
         self.output_linear = torch.nn.Linear(hidden_length_2, 1)
-        self.output_values = torch.nn.Softplus()
-        self.output_flat = torch.nn.Flatten(0)
+        self.output_values = torch.nn.Flatten(0)
 
     def forward(self, s: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         x = torch.cat((s, t), dim=1)
@@ -76,5 +75,4 @@ class RegFC3ConcatModel(IModel):
         x = self.hidden_2_values(x)
         x = self.output_linear(x)
         x = self.output_values(x)
-        x = self.output_flat(x)
         return x
