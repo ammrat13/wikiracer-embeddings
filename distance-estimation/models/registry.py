@@ -13,6 +13,7 @@ from models.categorical.fc2_concat import CatFC2ConcatModelMetadata
 from models.categorical.fc3_concat import CatFC3ConcatModelMetadata
 from models.regression.fc2_hadamard import RegFC2HadamardModelMetadata
 from models.regression.fc3_concat import RegFC3ConcatModelMetadata
+from models.regression.resfcl_concat import RegResFClConcatModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
     "cat-fc1-hadamard": CatFC1HadamardModelMetadata,
@@ -21,4 +22,5 @@ MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
     "cat-fc3-concat": CatFC3ConcatModelMetadata,
     "reg-fc2-hadamard": RegFC2HadamardModelMetadata,
     "reg-fc3-concat": RegFC3ConcatModelMetadata,
+    "reg-resfcl-concat": RegResFClConcatModelMetadata,
 }
