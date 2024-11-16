@@ -30,12 +30,19 @@ class RegResFClConcatModelMetadata(IRegressionModelMetadata):
             help="Length of each hidden layer",
             default=256,
         )
+        parser.add_argument(
+            "--dropout-rate",
+            type=float,
+            help="Dropout rate for each layer",
+            default=0.0,
+        )
 
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
         super().__init__(args, class_weights)
         self.embedding_length = args.embedding_length
         self.num_hidden_layers = args.hidden_layers
         self.hidden_length = args.hidden_length
+        self.dropout_rate = args.dropout_rate
 
     def get_model(self) -> IModel:
         return RegResFClConcatModel(
@@ -43,12 +50,14 @@ class RegResFClConcatModelMetadata(IRegressionModelMetadata):
             self.max_distance,
             self.num_hidden_layers,
             self.hidden_length,
+            self.dropout_rate,
         )
 
     def get_wandb_config(self) -> dict[str, Any]:
         return {
             "hidden_layers": self.num_hidden_layers,
             "hidden_length": self.hidden_length,
+            "dropout_rate": self.dropout_rate,
         }
 
 
@@ -61,6 +70,7 @@ class RegResFClConcatModel(IModel):
         max_distance: int,
         num_hidden_layers: int,
         hidden_length: int,
+        dropout_rate: float,
     ):
         super().__init__(embedding_length, max_distance)
         self.num_hidden_layers = num_hidden_layers
@@ -71,8 +81,10 @@ class RegResFClConcatModel(IModel):
 
         self.hidden_layers = torch.nn.ModuleList(
             [
-                ResidualLayer(
-                    torch.nn.Linear(hidden_length, hidden_length), torch.nn.ReLU()
+                torch.nn.Sequential(
+                    ResidualLayer(torch.nn.Linear(hidden_length, hidden_length)),
+                    torch.nn.ReLU(),
+                    torch.nn.Dropout(dropout_rate),
                 )
                 for _ in range(num_hidden_layers - 1)
             ]

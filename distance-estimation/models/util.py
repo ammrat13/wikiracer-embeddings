@@ -11,10 +11,9 @@ class ResidualLayer(torch.nn.Module):
     See: https://stackoverflow.com/a/78480544
     """
 
-    def __init__(self, module: torch.nn.Module, activation: torch.nn.Module):
+    def __init__(self, module: torch.nn.Module):
         super().__init__()
         self.module = module
-        self.activation = activation
 
     def forward(self, x):
-        return self.activation(x + self.module(x))
+        return x + self.module(x)
