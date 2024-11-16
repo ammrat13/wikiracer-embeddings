@@ -4,15 +4,13 @@ from typing import Any
 import torch
 
 from models import IModel
-from models.util import ResidualLayer
 from models.regression import IRegressionModelMetadata
 
 
-class RegResFClConcatModelMetadata(IRegressionModelMetadata):
+class RegFClConcatModelMetadata(IRegressionModelMetadata):
     """
     An l-layer fully-connected neural network with element-wise concatenation to
-    combine features. Each layer has the same width, and they also have residual
-    connections.
+    combine features.
     """
 
     @staticmethod
@@ -38,7 +36,7 @@ class RegResFClConcatModelMetadata(IRegressionModelMetadata):
         self.hidden_length = args.hidden_length
 
     def get_model(self) -> IModel:
-        return RegResFClConcatModel(
+        return RegFClConcatModel(
             self.embedding_length,
             self.max_distance,
             self.num_hidden_layers,
@@ -53,7 +51,7 @@ class RegResFClConcatModelMetadata(IRegressionModelMetadata):
 
 
 @torch.compile
-class RegResFClConcatModel(IModel):
+class RegFClConcatModel(IModel):
 
     def __init__(
         self,
@@ -72,7 +70,7 @@ class RegResFClConcatModel(IModel):
         self.hidden_layers = torch.nn.ModuleList(
             [
                 torch.nn.Sequential(
-                    ResidualLayer(torch.nn.Linear(hidden_length, hidden_length)),
+                    torch.nn.Linear(hidden_length, hidden_length),
                     torch.nn.ReLU(),
                 )
                 for _ in range(num_hidden_layers - 1)
