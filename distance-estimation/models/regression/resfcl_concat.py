@@ -74,7 +74,7 @@ class RegResFClConcatModel(IModel):
                 ResidualLayer(
                     torch.nn.Linear(hidden_length, hidden_length), torch.nn.ReLU()
                 )
-                for _ in range(num_hidden_layers)
+                for _ in range(num_hidden_layers - 1)
             ]
         )
 
