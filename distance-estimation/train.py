@@ -134,8 +134,10 @@ def get_model(
     model = model_meta.get_model().to(device)
     loss = model_meta.get_loss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", threshold=args.reduction_threshold, patience=5
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=args.learning_rate_step_size,
+        gamma=args.learning_rate_gamma,
     )
 
     start_epoch = 0
@@ -292,16 +294,16 @@ if __name__ == "__main__":
         default=0.001,
     )
     parser.add_argument(
-        "--reduction-threshold",
-        type=float,
-        help="Threshold for reducing learning rate",
-        default=1e-2,
+        "--learning-rate-step-size",
+        type=int,
+        help="How often to reduce the learning rate",
+        default=30,
     )
     parser.add_argument(
-        "--reduction-limit",
-        type=int,
-        help="Stop training when learning rate is reduced by this factor (log scale)",
-        default=2,
+        "--learning-rate-gamma",
+        type=float,
+        help="Factor to reduce the learning rate by",
+        default=0.1,
     )
     parser.add_argument(
         "--training-bfs",
