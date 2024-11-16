@@ -2,6 +2,7 @@
 
 import abc
 import argparse
+from typing import Any
 
 import torch
 
@@ -50,7 +51,7 @@ class IModelMetadata(abc.ABC):
         """
         pass
 
-    def get_wandb_config(self) -> dict[str, any]:
+    def get_wandb_config(self) -> dict[str, Any]:
         """
         Get the configuration for Weights & Biases.
 

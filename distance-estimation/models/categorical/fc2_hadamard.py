@@ -1,4 +1,5 @@
 import argparse
+from typing import Any
 
 import torch
 
@@ -32,7 +33,7 @@ class CatFC2HadamardModelMetadata(ICategoricalModelMetadata):
             self.embedding_length, self.max_distance, self.hidden_length
         )
 
-    def get_wandb_config(self) -> dict[str, any]:
+    def get_wandb_config(self) -> dict[str, Any]:
         return {"hidden_length": self.hidden_length}
 
 

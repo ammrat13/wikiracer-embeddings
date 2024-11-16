@@ -1,4 +1,5 @@
 import argparse
+from typing import Any
 
 import torch
 
@@ -42,7 +43,7 @@ class CatFC3ConcatModelMetadata(ICategoricalModelMetadata):
             self.hidden_length_2,
         )
 
-    def get_wandb_config(self) -> dict[str, any]:
+    def get_wandb_config(self) -> dict[str, Any]:
         return {
             "hidden_length_1": self.hidden_length_1,
             "hidden_length_2": self.hidden_length_2,
