@@ -2,6 +2,6 @@
 wandb/
 
 # Ignore sweep configuration
-*-sweep.yaml
+sweep-*.yaml
 # Ignore PyTorch models from sweeps
 *.pt
