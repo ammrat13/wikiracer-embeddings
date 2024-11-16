@@ -242,7 +242,7 @@ def main(
         # Early stopping when the learning rate gets too low
         if (
             math.log10(args.learning_rate) - math.log10(scheduler.get_last_lr()[0])
-            >= 4.0
+            >= args.reduction_limit - 0.5
         ):
             print("Learning rate too low. Stopping training.")
             break
@@ -296,6 +296,12 @@ if __name__ == "__main__":
         type=float,
         help="Threshold for reducing learning rate",
         default=1e-2,
+    )
+    parser.add_argument(
+        "--reduction-limit",
+        type=int,
+        help="Stop training when learning rate is reduced by this factor (log scale)",
+        default=2,
     )
     parser.add_argument(
         "--training-bfs",
