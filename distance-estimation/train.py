@@ -283,7 +283,7 @@ if __name__ == "__main__":
         "--embedding-length",
         type=int,
         help="Number of features to use",
-        default=512,
+        default=256,
     )
     parser.add_argument(
         "--learning-rate",
