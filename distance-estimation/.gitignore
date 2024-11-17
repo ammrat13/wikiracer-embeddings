@@ -1,5 +1,6 @@
-# Ignore logging
+# Ignore W&B
 wandb/
+artifacts/
 
 # Ignore sweep configuration
 sweep-*.yaml
