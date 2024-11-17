@@ -228,18 +228,19 @@ def main(
         # Also save the script for the model.
         torch.jit.script(model).save(args.script_output)
 
-        # Save to W&B
-        art = wandb.Artifact(
-            name=args.model_name,
-            type="model",
-            metadata={
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-            },
-        )
-        art.add_file(args.checkpoint_output, name="checkpoint.pt")
-        art.add_file(args.script_output, name="model.scr.pt")
-        run.log_artifact(art)
+        # Save to W&B. Only save every 10 epochs, and on the last epoch.
+        if (epoch + 1) % 10 == 0 or (epoch + 1) == args.epochs:
+            art = wandb.Artifact(
+                name=args.model_name,
+                type="model",
+                metadata={
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                },
+            )
+            art.add_file(args.checkpoint_output, name="checkpoint.pt")
+            art.add_file(args.script_output, name="model.scr.pt")
+            run.log_artifact(art)
 
         scheduler.step()
 
