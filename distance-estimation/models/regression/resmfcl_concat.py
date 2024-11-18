@@ -72,12 +72,15 @@ class RegResmFClConcatModel(IModel):
         self.hidden_layers = torch.nn.ModuleList(
             [
                 torch.nn.Sequential(
-                    torch.nn.Linear(hidden_length, hidden_length),
-                    torch.nn.ReLU(),
+                    *(
+                        [torch.nn.Linear(hidden_length, hidden_length)]
+                        + ([torch.nn.ReLU()] if it != num_hidden_layers - 2 else [])
+                    )
                 )
-                for _ in range(num_hidden_layers - 1)
+                for it in range(num_hidden_layers - 1)
             ]
         )
+        self.hidden_values = torch.nn.ReLU()
 
         self.output_linear = torch.nn.Linear(hidden_length, 1)
         self.output_values = torch.nn.Flatten(0)
@@ -91,6 +94,7 @@ class RegResmFClConcatModel(IModel):
         for hidden_layer in self.hidden_layers:
             x = hidden_layer(x)
         x = x + x_res
+        x = self.hidden_values(x)
 
         x = self.output_linear(x)
         x = self.output_values(x)
