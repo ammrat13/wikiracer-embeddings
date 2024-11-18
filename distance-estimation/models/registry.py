@@ -14,6 +14,7 @@ from models.regression.fclsp_concat import RegFClSpConcatModelMetadata
 from models.regression.resfcl_concat import RegResFClConcatModelMetadata
 from models.regression.resmfcl_concat import RegResmFClConcatModelMetadata
 from models.categorical.linear_concat import CatLinearConcatModelMetadata
+from models.categorical.fcl_concat import CatFClConcatModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
     "reg-linear-concat": RegLinearConcatModelMetadata,
@@ -23,4 +24,5 @@ MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
     "reg-resfcl-concat": RegResFClConcatModelMetadata,
     "reg-resmfcl-concat": RegResmFClConcatModelMetadata,
     "cat-linear-concat": CatLinearConcatModelMetadata,
+    "cat-fcl-concat": CatFClConcatModelMetadata,
 }
