@@ -16,6 +16,7 @@ class IRegressionModelMetadata(IModelMetadata):
         pass
 
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
+        self.embedding_length = args.embedding_length
         self.max_distance = args.max_dist
 
     def get_loss(self) -> torch.nn.Module:

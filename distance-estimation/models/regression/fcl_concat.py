@@ -31,7 +31,6 @@ class RegFClConcatModelMetadata(IRegressionModelMetadata):
 
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
         super().__init__(args, class_weights)
-        self.embedding_length = args.embedding_length
         self.num_hidden_layers = args.hidden_layers
         self.hidden_length = args.hidden_length
 

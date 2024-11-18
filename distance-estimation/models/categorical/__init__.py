@@ -19,6 +19,7 @@ class ICategoricalModelMetadata(IModelMetadata):
         pass
 
     def __init__(self, args: argparse.Namespace, class_weights: torch.Tensor):
+        self.embedding_length = args.embedding_length
         self.max_distance = args.max_dist
         self.class_weights = class_weights
 
