@@ -83,7 +83,7 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
 
     disp = sklearn.metrics.ConfusionMatrixDisplay(100 * confusion_matrix)
     disp.plot(include_values=True, values_format=".0f")
-    plt.savefig(args.output)
+    plt.savefig(args.output, bbox_inches="tight")
 
 
 if __name__ == "__main__":

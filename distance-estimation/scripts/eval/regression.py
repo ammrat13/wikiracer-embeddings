@@ -114,9 +114,14 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
             width=model.max_distance / args.histogram_bins,
             align="edge",
         )
-        ax.set_title(f"Distance Histogram for \\(d = {it}\\)")
+
+        if it == 0:
+            ax.set_title(f"Distance Histogram for Nodes Treated as Unconnected")
+        else:
+            ax.set_title(f"Distance Histogram for \\(d = {it}\\)")
         ax.set_xlabel("Predicted Distance")
-        ax.set_ylabel("Probability Density")
+        ax.set_ylabel("Density")
+
         fig.savefig(
             os.path.join(args.histogram_dir, f"histogram_{it}.png"),
             bbox_inches="tight",
