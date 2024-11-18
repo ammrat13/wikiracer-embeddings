@@ -32,8 +32,10 @@ class RegLinearConcatModel(IModel):
     def __init__(self, embedding_length: int, max_distance: int):
         super().__init__(embedding_length, max_distance)
         self.linear = torch.nn.Linear(2 * embedding_length, 1)
+        self.flatten = torch.nn.Flatten(0)
 
     def forward(self, s: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         x = torch.cat((s, t), dim=1)
         x = self.linear(x)
+        x = self.flatten(x)
         return x

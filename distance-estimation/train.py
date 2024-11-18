@@ -1,7 +1,6 @@
 """Train a distance estimation model from the registry."""
 
 import argparse
-import math
 import os
 import sys
 from typing import Any, Type
