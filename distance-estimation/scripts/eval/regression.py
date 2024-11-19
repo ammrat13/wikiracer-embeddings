@@ -43,36 +43,40 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     )
 
     print("Starting evaluation!\n")
-    count_connected = 0
+    count = 0
     count_unconnected = 0
     mean_absolute_error = 0
     mean_relative_error = 0
     mean_unconnected_prediction = 0
+
+    calibration = 0.0
 
     hist_bins = np.linspace(0, model.max_distance, args.histogram_bins + 1)
     histogram = np.zeros((model.max_distance, args.histogram_bins), dtype=np.int32)
 
     with torch.no_grad():
         for data in tqdm(dataset_loader):
-            s, t, labels, _ = dataset.process_batch(data)
+            s, t, labels, sample_weights = dataset.process_batch(data)
             out = model(s, t)
             pred = out + 1.0
 
             batch_connected_mask = labels != 0
-            batch_connected = torch.sum(batch_connected_mask).item()
-            batch_unconnected = len(labels) - batch_connected
-            count_connected += batch_connected
-            count_unconnected += batch_unconnected
+            batch_count = len(labels)
+            batch_count_unconnected = torch.sum(~batch_connected_mask).item()
+            count += batch_count
+            count_unconnected += batch_count_unconnected
 
             mean_absolute_error += torch.sum(
-                torch.where(
+                sample_weights
+                * torch.where(
                     batch_connected_mask,
                     torch.abs(pred - labels),
                     0.0,
                 )
             ).item()
             mean_relative_error += torch.sum(
-                torch.where(
+                sample_weights
+                * torch.where(
                     batch_connected_mask,
                     torch.abs(pred - labels)
                     / torch.where(batch_connected_mask, labels, 1.0),
@@ -95,8 +99,9 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
                 )
                 histogram[it] += batch_hist
 
-    mean_absolute_error /= count_connected
-    mean_relative_error /= count_connected
+    normalization_constant = model.max_distance / (count * (model.max_distance - 1))
+    mean_absolute_error *= normalization_constant
+    mean_relative_error *= normalization_constant
     mean_unconnected_prediction /= count_unconnected
 
     print(f"    Mean Absolute Error:         {mean_absolute_error}")
