@@ -54,7 +54,7 @@ services:
       - ./data/memgraph/data:/var/lib/memgraph
       - ./data/memgraph/xfer:/xfer
 
-  db-memgraph-dev:
+  db-memgraph-graph-search-dev:
     <<: *db-memgraph-template
     image: ammrat13/wikiracer-embeddings-memgraph:dev
     build:
