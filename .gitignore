@@ -1,6 +1,9 @@
 # Ignore IDE configuration
 /.vscode/
 
+# Ignore libraries
+/deps/
+
 # Ignore training data
 /data/
 # Ignore trained models

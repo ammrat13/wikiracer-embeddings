@@ -1,6 +1,6 @@
 use rsmgp_sys::memgraph::Memgraph;
 use rsmgp_sys::mgp::{mgp_graph, mgp_list, mgp_module, mgp_memory, mgp_result};
-use rsmgp_sys::result::MgpResult;
+use rsmgp_sys::result::Result;
 use rsmgp_sys::rsmgp::{Type, NamedType, set_memgraph_error_msg};
 use rsmgp_sys::{close_module, define_procedure, define_type, init_module};
 
@@ -9,7 +9,7 @@ use std::ffi::CString;
 use std::os::raw::c_int;
 use std::panic;
 
-init_module!(|memgraph: &Memgraph| -> MgpResult<()> {
+init_module!(|memgraph: &Memgraph| -> Result<()> {
     memgraph.add_read_procedure(
         hello_world,
         c_str!("hello_world"),
@@ -20,7 +20,7 @@ init_module!(|memgraph: &Memgraph| -> MgpResult<()> {
     Ok(())
 });
 
-define_procedure!(hello_world, |memgraph: &Memgraph| -> MgpResult<()> {
+define_procedure!(hello_world, |memgraph: &Memgraph| -> Result<()> {
     let result = memgraph.result_record()?;
     result.insert_string(
         c_str!("output_string"),
@@ -29,6 +29,6 @@ define_procedure!(hello_world, |memgraph: &Memgraph| -> MgpResult<()> {
     Ok(())
 });
 
-close_module!(|| -> MgpResult<()> {
+close_module!(|| -> Result<()> {
     Ok(())
 });
