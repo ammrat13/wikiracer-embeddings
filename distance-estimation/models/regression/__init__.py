@@ -22,9 +22,6 @@ class IRegressionModelMetadata(IModelMetadata):
     def get_loss(self) -> torch.nn.Module:
         return RegressionModelLoss(self.max_distance)
 
-    def extract_predictions(self, output: torch.Tensor) -> torch.Tensor:
-        return output + 1.0
-
 
 @torch.compile
 class RegressionModelLoss(torch.nn.Module):

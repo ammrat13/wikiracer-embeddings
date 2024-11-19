@@ -82,13 +82,3 @@ class IModelMetadata(abc.ABC):
         depend on the command-line arguments.
         """
         pass
-
-    @abc.abstractmethod
-    def extract_predictions(self, output: torch.Tensor) -> torch.Tensor:
-        """
-        Extracts the predictions from the model output.
-
-        The argument is the batched output of the model, and the returned value
-        should be a list of class labels for each batch, with shape (b, 1).
-        """
-        pass

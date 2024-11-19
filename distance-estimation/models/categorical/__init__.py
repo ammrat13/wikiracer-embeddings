@@ -26,9 +26,6 @@ class ICategoricalModelMetadata(IModelMetadata):
     def get_loss(self) -> torch.nn.Module:
         return CategoricalModelLoss(self.max_distance, self.class_weights)
 
-    def extract_predictions(self, output: torch.Tensor) -> torch.Tensor:
-        return torch.argmax(output, dim=1)
-
 
 @torch.compile
 class CategoricalModelLoss(torch.nn.Module):
