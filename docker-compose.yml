@@ -53,6 +53,7 @@ services:
     volumes:
       - ./data/memgraph/data:/var/lib/memgraph
       - ./data/memgraph/xfer:/xfer
+      - ./models/distance-estimation:/models
 
   db-memgraph-graph-search-dev: &db-memgraph-graph-search-template
     <<: *db-memgraph-template
