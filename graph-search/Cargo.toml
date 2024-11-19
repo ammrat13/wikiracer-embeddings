@@ -7,9 +7,11 @@ authors = ["Ammar Ratnani <ammrat13@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/ammrat13/wikiracer-embeddings"
 
+# Note that the Dockerfile `sed`s over `rsmgp-sys`. It's expecting it to be at
+# the very start of the line.
 [dependencies]
 tch = "0.18.0"
-rsmgp-sys = { path = "../rsmgp-sys" }
+rsmgp-sys = { path = "../deps/rsmgp/rsmgp-sys" }
 c_str_macro = "1.0.3"
 
 [lib]
