@@ -349,6 +349,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Continue from a checkpoint",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Does nothing, but allows repeated runs in sweeps",
+    )
     parser.add_argument("train_name", type=str, help="Name of the training file")
     parser.add_argument("validation_name", type=str, help="Name of the validation file")
     model_meta_cls.add_args(parser)
