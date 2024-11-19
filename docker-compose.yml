@@ -1,6 +1,10 @@
 # All of the services we host data in. Wikipedia publishes its dumps as MySQL,
 # but we do most of our work in Memgraph since it's more useful for our
 # workload. Memgraph Lab is a useful interface for prototyping queries.
+#
+# We use profiles to manage the different services. The default is '' according
+# to https://stackoverflow.com/a/77129516. We also use templates following
+# https://hackmamba.io/blog/2022/09/best-practices-when-using-docker-compose/.
 
 name: cs229-simplewiki-data
 services:
@@ -24,8 +28,17 @@ services:
       - ./data/mysql/data:/var/lib/mysql
       - ./data/mysql/xfer:/xfer
 
-  db-memgraph:
+  db-memgraph: &db-memgraph-template
     image: memgraph/memgraph-mage:1.20-memgraph-2.20
+    profiles:
+      - ''
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     environment:
       MEMGRAPH_USER: cs229-simplewiki-data
       MEMGRAPH_PASSWORD: cs229-simplewiki-data-pw
@@ -41,7 +54,22 @@ services:
       - ./data/memgraph/data:/var/lib/memgraph
       - ./data/memgraph/xfer:/xfer
 
+  db-memgraph-dev:
+    <<: *db-memgraph-template
+    image: ammrat13/wikiracer-embeddings-memgraph:dev
+    build:
+      context: graph-search/
+      dockerfile: Dockerfile
+      args:
+        - CS229_CARGO_BUILD_PROFILE=dev
+        - CS229_CARGO_BUILD_DIR=debug
+    profiles:
+      - graph-search-dev
+
   iface-memgraph-lab:
     image: memgraph/lab:2.17.0
+    profiles:
+      - ''
+      - graph-search-dev
     ports:
       - 3000:3000

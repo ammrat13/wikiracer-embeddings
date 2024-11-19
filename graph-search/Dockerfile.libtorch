@@ -1,0 +1,13 @@
+# A small container to hold the LibTorch download. This way, we can download it
+# once and use it in multiple stages.
+
+FROM alpine:3.20
+
+ARG CS229_LIBTORCH_URL=https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.5.0%2Bcu124.zip
+# Download link for the version of LibTorch to use
+
+WORKDIR /
+RUN apk add --no-cache wget unzip && \
+    wget -O libtorch.zip ${CS229_LIBTORCH_URL} && \
+    unzip libtorch.zip && \
+    rm libtorch.zip

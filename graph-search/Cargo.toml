@@ -1,0 +1,17 @@
+[package]
+edition = "2021"
+rust-version = "1.82.0"
+name = "wikiracer-embeddings-graph-search"
+version = "0.1.0"
+authors = ["Ammar Ratnani <ammrat13@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/ammrat13/wikiracer-embeddings"
+
+[dependencies]
+tch = "0.18.0"
+rsmgp-sys = "1.0.0"
+c_str_macro = "1.0.3"
+
+[lib]
+name = "graphsearch"
+crate-type = ["cdylib"]
