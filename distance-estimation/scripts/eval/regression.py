@@ -7,7 +7,6 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-import sklearn.metrics
 import torch
 from tqdm import tqdm
 import wandb
@@ -48,8 +47,6 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
     mean_absolute_error = 0
     mean_relative_error = 0
     mean_unconnected_prediction = 0
-
-    calibration = 0.0
 
     hist_bins = np.linspace(0, model.max_distance, args.histogram_bins + 1)
     histogram = np.zeros((model.max_distance, args.histogram_bins), dtype=np.int32)
