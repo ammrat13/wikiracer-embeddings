@@ -253,7 +253,7 @@ pub fn astar(
                     }
                 }).collect::<Result<Vec<Edge>>>()?;
         // The nodes to relax are the target vertices of the edges.
-        let node_ids_to_relax = edges_to_relax
+        let to_ids_to_relax = edges_to_relax
             .iter()
             .map(|e| match e.to_vertex() {
                 Ok(v) => Ok(v.id()),
@@ -279,10 +279,10 @@ pub fn astar(
             stats.relaxed_edges += 1;
         }
 
-        // Next, evaluate the heuristic on all the nodes to relax that don't
-        // already have an entry in the heuristic cache. If we don't have to
-        // evaluate the heuristic, we don't.
-        let heur_queries = node_ids_to_relax
+        // Next, evaluate the heuristic on all the destination nodes to relax
+        // that don't already have an entry in the heuristic cache. If we don't
+        // have to evaluate the heuristic, we don't.
+        let heur_queries = to_ids_to_relax
             .iter()
             .filter(|id| !heur_cache.contains_key(id))
             .map(|id| memgraph.vertex_by_id(*id))
@@ -299,13 +299,13 @@ pub fn astar(
 
 
         // Finally, update the priority queue.
-        for id in node_ids_to_relax {
+        for to_id in to_ids_to_relax {
             // Safety: We just inserted the heuristic value into the cache. We
             // also just updated the G score.
             let gscore = cur_gscore + 1;
-            let fscore = gscore as f32 + heur_cache.get(&id).unwrap();
-            debug_assert!(gscore == gs.get(&id).unwrap().gscore);
-            pq.push(PQEntry { node_id: id, fscore });
+            let fscore = gscore as f32 + heur_cache.get(&to_id).unwrap();
+            debug_assert!(gscore == gs.get(&to_id).unwrap().gscore);
+            pq.push(PQEntry { node_id: to_id, fscore });
         }
     }
 
