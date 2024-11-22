@@ -124,11 +124,11 @@ struct GSEntry {
     edge: Option<Edge>,
 }
 
-pub fn astar(
+pub fn astar<H: Heuristic>(
     memgraph: &Memgraph,
     source: &Vertex,
     target: &Vertex,
-    heur: &impl Heuristic,
+    heur: &H,
 ) -> Result<AStarResult> {
     // Keep track of stats for the entire execution.
     let mut stats = AStarStats::new();

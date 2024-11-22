@@ -50,7 +50,7 @@ define_procedure!(graph_search_null, |memgraph: &Memgraph| -> Result<()> {
 /// Common graph search procedure for all heuristics. The client creates the
 /// heuristic, then calls this procedure. The source and target vertices must be
 /// at index 0 and 1 in the arguments, and the result record has a fixed schema.
-fn graph_search(memgraph: &Memgraph, heur: &impl Heuristic) -> Result<()> {
+fn graph_search<H: Heuristic>(memgraph: &Memgraph, heur: &H) -> Result<()> {
     let result = memgraph.result_record()?;
     let args = memgraph.args()?;
 
