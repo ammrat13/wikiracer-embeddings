@@ -87,10 +87,12 @@ type NodeId = i64;
 
 /// An entry in the priority queue for A*. Contains a node and its cost. Note
 /// that the costs are compared in reverse order, so that the priority queue
-/// returns the smallest cost first.
+/// returns the smallest cost first. We also remember the G score of the node so
+/// we can skip it if needed.
 struct PQEntry {
     node_id: NodeId,
     fscore: f32,
+    gscore: usize,
 }
 
 impl PartialEq for PQEntry {
@@ -137,19 +139,12 @@ pub fn astar(
     // calling it.
     let mut heur_cache: HashMap<NodeId, f32> = HashMap::new();
 
-    // Evaluate the heuristic on the source vertex. Note that we have to do some
-    // finagling to get the vertex out of the borrow.
-    //
-    // Safety: The heuristic will return a list of the same length as the query
-    // list, so we can get the zeroth element.
-    let heur_source = *heur
-        .estimate(target, &[memgraph.vertex_by_id(source.id())?])?
-        .get(0)
-        .unwrap();
-    // Add the source vertex.
+    // Add the source vertex. It doesn't matter what the heuristic value is, as
+    // we immediately pop it off the priority queue.
     pq.push(PQEntry {
         node_id: source.id(),
-        fscore: heur_source,
+        fscore: 0.0,
+        gscore: 0,
     });
     gs.insert(
         source.id(),
@@ -158,7 +153,6 @@ pub fn astar(
             edge: None,
         },
     );
-    heur_cache.insert(source.id(), heur_source);
 
     // Debug state
     let mut last_fscore = f32::NEG_INFINITY;
@@ -167,6 +161,7 @@ pub fn astar(
     while let Some(PQEntry {
         node_id: cur_id,
         fscore: cur_fscore,
+        gscore: cur_queued_gscore,
     }) = pq.pop()
     {
         // Safety: Anything that makes it into the priority queue must have a
@@ -179,6 +174,11 @@ pub fn astar(
         // The fscores should always increase.
         debug_assert!(cur_fscore >= last_fscore);
         last_fscore = cur_fscore;
+
+        // If we popped outdated information, skip it.
+        if cur_queued_gscore > cur_gscore {
+            continue;
+        }
 
         // If we reached the target, we're done.
         if cur_id == target.id() {
@@ -305,7 +305,7 @@ pub fn astar(
             let gscore = cur_gscore + 1;
             let fscore = gscore as f32 + heur_cache.get(&to_id).unwrap();
             debug_assert!(gscore == gs.get(&to_id).unwrap().gscore);
-            pq.push(PQEntry { node_id: to_id, fscore });
+            pq.push(PQEntry { node_id: to_id, fscore, gscore });
         }
     }
 
