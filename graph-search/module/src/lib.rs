@@ -20,7 +20,7 @@ use std::ffi::CString;
 use std::os::raw::c_int;
 use std::panic;
 
-use astar::ASTAR_OUTPUT_TYPES;
+use astar::{astar, ASTAR_OUTPUT_TYPES};
 use heuristic::null::NullHeuristic;
 use heuristic::Heuristic;
 
@@ -67,8 +67,5 @@ fn graph_search(memgraph: &Memgraph, heur: &impl Heuristic) -> Result<()> {
     };
 
     // Run A* and get the result.
-    let astar_result = astar::astar(memgraph, &source, &target, heur)?;
-    astar_result.add_to(&result)?;
-
-    Ok(())
+    astar(memgraph, &source, &target, heur)?.add_to(&result)
 }
