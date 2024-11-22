@@ -252,11 +252,6 @@ pub fn astar(
                         }
                     }
                 }).collect::<Result<Vec<Edge>>>()?;
-        // If we don't have any edges to relax, we're done with this node.
-        if edges_to_relax.is_empty() {
-            continue;
-        }
-
         // The nodes to relax are the target vertices of the edges.
         let node_ids_to_relax = edges_to_relax
             .iter()
