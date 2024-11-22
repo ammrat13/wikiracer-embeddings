@@ -58,7 +58,11 @@ services:
   db-memgraph-graph-search-dev: &db-memgraph-graph-search-template
     <<: *db-memgraph-template
     image: ammrat13/wikiracer-embeddings-memgraph:dev
-    build: graph-search/module/
+    build:
+      context: graph-search/module/
+      dockerfile: Dockerfile
+      args:
+        - CS229_BUILD_TYPE=Debug
     profiles:
       - graph-search-dev
     environment:
