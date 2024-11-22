@@ -17,7 +17,7 @@ impl NullHeuristic {
 }
 
 impl Heuristic for NullHeuristic {
-    fn estimate(&self, target: &Vertex, queries: &[Vertex]) -> Result<Vec<f32>> {
+    fn estimate(&self, target: &Vertex, queries: &[&Vertex]) -> Result<Vec<f32>> {
         Ok(queries
             .iter()
             .map(|query| if query.id() == target.id() { 0.0 } else { 1.0 })
