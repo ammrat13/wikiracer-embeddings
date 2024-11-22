@@ -4,6 +4,8 @@
 //! otherwise.
 
 use super::Heuristic;
+
+use rsmgp_sys::result::Result;
 use rsmgp_sys::vertex::Vertex;
 
 pub struct NullHeuristic;
@@ -15,10 +17,10 @@ impl NullHeuristic {
 }
 
 impl Heuristic for NullHeuristic {
-    fn estimate(&self, target: &Vertex, queries: &[&Vertex]) -> Vec<f32> {
-        queries
+    fn estimate(&self, target: &Vertex, queries: &[&Vertex]) -> Result<Vec<f32>> {
+        Ok(queries
             .iter()
             .map(|&query| if query.id() == target.id() { 0.0 } else { 1.0 })
-            .collect()
+            .collect())
     }
 }

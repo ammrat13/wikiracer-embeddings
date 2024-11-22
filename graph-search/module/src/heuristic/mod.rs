@@ -5,11 +5,12 @@
 
 pub mod null;
 
+use rsmgp_sys::result::Result;
 use rsmgp_sys::vertex::Vertex;
 
 pub trait Heuristic {
     /// Given a target vertex and a list of query vertices, return the estimated
     /// distance from each query vertex to the target vertex. The estimates are
     /// returned in the same order as the query vertices.
-    fn estimate(&self, target: &Vertex, queries: &[&Vertex]) -> Vec<f32>;
+    fn estimate(&self, target: &Vertex, queries: &[&Vertex]) -> Result<Vec<f32>>;
 }
