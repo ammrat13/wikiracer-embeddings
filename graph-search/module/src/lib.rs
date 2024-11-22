@@ -20,22 +20,13 @@ use std::ffi::CString;
 use std::os::raw::c_int;
 use std::panic;
 
+use astar::ASTAR_OUTPUT_TYPES;
 use heuristic::null::NullHeuristic;
 use heuristic::Heuristic;
 
 close_module!(|| -> Result<()> { Ok(()) });
 
 init_module!(|memgraph: &Memgraph| -> Result<()> {
-    // We have multiple graph search procedures to accomodate the different
-    // heuristics. They have a lot in common though. We define the common output
-    // types here. We unfortunately can't define common input types since types
-    // can't be cloned.
-    let graph_search_output = &[
-        define_type!("path", Type::Path),
-        define_type!("expanded_nodes", Type::Int),
-        define_type!("relaxed_edges", Type::Int),
-    ];
-
     // Graph search procedure for the null heuristic.
     memgraph.add_read_procedure(
         graph_search_null,
@@ -45,7 +36,7 @@ init_module!(|memgraph: &Memgraph| -> Result<()> {
             define_type!("target", Type::Vertex),
         ],
         &[],
-        graph_search_output,
+        ASTAR_OUTPUT_TYPES,
     )?;
 
     Ok(())
@@ -75,19 +66,9 @@ fn graph_search(memgraph: &Memgraph, heur: &impl Heuristic) -> Result<()> {
         _ => return Err(Error::UnableToCopyVertex),
     };
 
-    // Run A*.
+    // Run A* and get the result.
     let astar_result = astar::astar(memgraph, &source, &target, heur)?;
-
-    // Populate the result record.
-    result.insert_path(c_str!("path"), &astar_result.path)?;
-    result.insert_int(
-        c_str!("expanded_nodes"),
-        astar_result.stats.expanded_nodes as i64,
-    )?;
-    result.insert_int(
-        c_str!("relaxed_edges"),
-        astar_result.stats.relaxed_edges as i64,
-    )?;
+    astar_result.add_to(&result)?;
 
     Ok(())
 }
