@@ -55,7 +55,7 @@ services:
       - ./data/memgraph/xfer:/xfer
       - ./models/distance-estimation:/models
 
-  db-memgraph-graph-search-dev: &db-memgraph-graph-search-template
+  db-memgraph-graph-search-dev:
     <<: *db-memgraph-template
     image: ammrat13/wikiracer-embeddings-memgraph:dev
     build:
@@ -69,7 +69,7 @@ services:
       RUST_BACKTRACE: 1
 
   db-memgraph-graph-search-release:
-    <<: *db-memgraph-graph-search-template
+    <<: *db-memgraph-template
     image: ammrat13/wikiracer-embeddings-memgraph:latest
     build:
       context: graph-search/module/
