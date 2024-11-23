@@ -171,10 +171,12 @@ pub fn astar<H: Heuristic>(
         let cur_gscore = cur_gsentry.gscore;
         stats.expanded_nodes += 1;
 
-        // The fscores should always increase.
+        // The fscores we pop should always increase.
         debug_assert!(cur_fscore >= last_fscore);
         last_fscore = cur_fscore;
 
+        // The gscore should never increase.
+        debug_assert!(cur_queued_gscore >= cur_gscore);
         // If we popped outdated information, skip it.
         if cur_queued_gscore > cur_gscore {
             continue;
@@ -264,9 +266,9 @@ pub fn astar<H: Heuristic>(
             .collect::<Vec<&Vertex>>();
         if !heur_queries.is_empty() {
             let heur_results = heur.estimate(target, &heur_queries)?;
-            for (node, result) in heur_queries.iter().zip(heur_results.iter()) {
-                debug_assert!(!heur_cache.contains_key(&node.id()));
-                heur_cache.insert(node.id(), *result);
+            for (t, r) in heur_queries.iter().zip(heur_results.iter()) {
+                debug_assert!(!heur_cache.contains_key(&t.id()));
+                heur_cache.insert(t.id(), *r);
             }
             stats.heuristic_runs += 1;
             stats.heuristic_nodes += heur_queries.len();
@@ -277,8 +279,7 @@ pub fn astar<H: Heuristic>(
             // Safety: We just inserted the heuristic value into the cache. We
             // also just updated the G score.
             let gscore = cur_gscore + 1;
-            let fscore = gscore as f32 + heur_cache.get(&to_id).unwrap();
-            debug_assert!(gscore == gs.get(&to_id).unwrap().gscore);
+            let fscore = gscore as f32 + heur_cache.get(to_id).unwrap();
             pq.push(PQEntry {
                 node_id: *to_id,
                 fscore,
