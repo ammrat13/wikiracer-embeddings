@@ -1,2 +1,5 @@
 # Ignore build files
 /target/
+
+# Ignore data collected
+/results/
