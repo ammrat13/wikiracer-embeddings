@@ -1,6 +1,8 @@
 mod heuristic;
 mod io;
 
+use std::fs::File;
+
 use argparse::ArgumentParser;
 use ndarray::Array2;
 use ndarray_npy::ReadNpyExt;
@@ -58,13 +60,13 @@ fn main() {
     let test_pairs_path = config["data"]["graph"]["test-set"].as_str().unwrap();
 
     // Read the graph
-    let graph = std::fs::File::open(graph_path).expect("Could not open graph file");
+    let graph = File::open(graph_path).expect("Could not open graph file");
     let graph: Graph = bson::from_reader(graph).expect("Could not parse graph file");
     // Read the embeddings
-    let embeddings = std::fs::File::open(embeddings_path).expect("Could not open embeddings file");
+    let embeddings = File::open(embeddings_path).expect("Could not open embeddings file");
     let embeddings = Array2::<f32>::read_npy(embeddings).expect("Could not parse embeddings file");
     // Create a CSV reader for the test pairs
-    let test_pairs = std::fs::File::open(test_pairs_path).expect("Could not open test pairs");
+    let test_pairs = File::open(test_pairs_path).expect("Could not open test pairs");
     let mut test_pairs = csv::Reader::from_reader(test_pairs);
 
     // Construct the heuristic
@@ -75,7 +77,7 @@ fn main() {
     };
 
     // Create a CSV writer for the output
-    let output = std::fs::File::create(output_path).expect("Could not create output file");
+    let output = File::create(output_path).expect("Could not create output file");
     let mut output = csv::Writer::from_writer(output);
 
     // Run A* on the test pairs
