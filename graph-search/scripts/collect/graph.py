@@ -21,7 +21,6 @@ from typing import Any
 
 from bson import BSON
 from neo4j import GraphDatabase
-import numpy as np
 from tqdm import tqdm
 import yaml
 

@@ -10,7 +10,9 @@ data:
     uri: bolt://localhost:7687
     user: cs229-simplewiki-data
     pass: cs229-simplewiki-data-pw
-  graph-bson: /path/to/graph.bson
+  graph:
+    bson: /path/to/graph.bson
+    test-set: /path/to/test-set.json
   embeddings:
     1536: /path/to/text-embeddings-1536.npy
     512: /path/to/text-embeddings-512.npy
