@@ -6,7 +6,7 @@ use crate::io::NodeIndex;
 
 use ndarray::Array2;
 use tch::jit::CModule;
-use tch::{Device, IndexOp, Kind, Tensor};
+use tch::{Cuda, Device, IndexOp, Kind, Tensor};
 
 /// The longest possible embedding length.
 const MAX_EMBEDDING_LENGTH: usize = 1536;
@@ -78,7 +78,11 @@ impl TorchHeuristic {
             std::process::exit(1);
         }
 
+        // We have CUDA on the system, so make sure we use it
         let device = Device::cuda_if_available();
+        debug_assert!(Cuda::is_available());
+        debug_assert!(device.is_cuda());
+
         let model = CModule::load_on_device(&model_path, device).expect("Could not load model");
 
         // Convert the NumPy array to a PyTorch tensor
