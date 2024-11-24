@@ -8,6 +8,8 @@ neo4j = "*"
 pyyaml = "*"
 tqdm = "*"
 pymongo = "*"
+pandas = "*"
+matplotlib = "*"
 
 [dev-packages]
 
