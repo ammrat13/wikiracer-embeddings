@@ -125,7 +125,6 @@ pub fn astar(
         // stuff to the priority queue.
         let cur_gsentry = gs.get(&cur_id).unwrap();
         let cur_gscore = cur_gsentry.gscore;
-        ret.nodes_expanded += 1;
 
         // The gscore should never increase.
         debug_assert!(cur_queued_gscore >= cur_gscore);
@@ -140,6 +139,9 @@ pub fn astar(
             ret.time = start_time.elapsed().as_secs_f64();
             return ret;
         }
+
+        // Only count nodes that we actually expand.
+        ret.nodes_expanded += 1;
 
         // Get a list of neighbors that have a shorter path to them through the
         // current node.
