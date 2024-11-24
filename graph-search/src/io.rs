@@ -10,7 +10,7 @@ pub type NodeIndex = usize;
 /// The graph we collected from Memgraph.
 #[derive(Debug, Deserialize)]
 pub struct Graph {
-    pub num_nodes: usize,
+    #[serde(rename = "adjacency_list")]
     pub adjacency_list: Vec<Vec<NodeIndex>>,
 }
 

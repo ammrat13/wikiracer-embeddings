@@ -6,7 +6,7 @@ use crate::io::NodeIndex;
 pub struct NullHeuristic;
 
 impl Heuristic for NullHeuristic {
-    fn estimate(&self, target: NodeIndex, queries: &[NodeIndex]) -> Vec<f64> {
+    fn estimate(&self, target: NodeIndex, queries: &[NodeIndex]) -> Vec<f32> {
         queries
             .iter()
             .map(|&query| if query == target { 0.0 } else { 1.0 })

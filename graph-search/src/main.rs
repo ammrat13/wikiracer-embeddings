@@ -1,3 +1,4 @@
+mod astar;
 mod heuristic;
 mod io;
 
@@ -81,8 +82,11 @@ fn main() {
     let mut output = csv::Writer::from_writer(output);
 
     // Run A* on the test pairs
-    for result in test_pairs.deserialize() {
-        let result: TestPair = result.expect("Could not parse test pair");
-        println!("{:?}", result);
+    eprintln!("Running A* on test pairs...");
+    for (i, tp) in test_pairs.deserialize().enumerate() {
+        let tp: TestPair = tp.expect("Could not parse test pair");
+        let res = astar::astar(&graph, &heuristic, &tp.source, &tp.target);
+        output.serialize(res).expect("Could not write result");
+        println!("Processed test pair {}", i + 1);
     }
 }
