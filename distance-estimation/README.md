@@ -24,3 +24,7 @@ The best hyperparameter configuration was found to be:
   * 3 hidden layers
   * 192D hidden lengths
   * linear output
+  * residual connections through every weight matrix, stopping before the ReLU
+
+It's hard to determine how well these models perform on A* just looking at the
+loss.
