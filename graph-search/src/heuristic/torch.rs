@@ -44,7 +44,15 @@ impl Heuristic for TorchHeuristic {
         let res = res.clamp_min(0.0);
         let res = res + 1.0;
 
-        Vec::<f32>::try_from(res).expect("Failed to read output")
+        let res_vec = Vec::<f32>::try_from(res).expect("Failed to read output");
+
+        // Special case for the target node. We didn't train the model to return
+        // zero at the target, so we need to fix it up here.
+        res_vec
+            .iter()
+            .zip(queries)
+            .map(|(h, q)| if (*q as NodeIndex) == target { 0.0 } else { *h })
+            .collect()
     }
 }
 
