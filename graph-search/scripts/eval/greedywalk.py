@@ -9,10 +9,14 @@ import yaml
 
 def main(args: argparse.Namespace):
     trace_df = pd.read_csv(args.trace)["steps"]
+
     failures = trace_df.isna().sum()
     success_rate = 1 - failures / len(trace_df)
 
-    print(f"Success Rate: {100 * success_rate:.2f}%")
+    avg_steps = trace_df.mean()
+
+    print(f"Success Rate:  {100 * success_rate:.2f}%")
+    print(f"Average Steps: {avg_steps:.2f}")
 
 
 if __name__ == "__main__":
