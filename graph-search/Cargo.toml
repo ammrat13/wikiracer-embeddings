@@ -17,3 +17,9 @@ ndarray-npy = "0.9.1"
 serde = "1.0.215"
 tch = "0.18.0"
 yaml-rust = "0.4.5"
+
+[[bin]]
+name = "astar"
+
+[[bin]]
+name = "greedywalk"

@@ -1,12 +1,10 @@
-mod astar;
-mod heuristic;
-mod io;
-
 use std::fs::File;
 
 use argparse::ArgumentParser;
 
-use io::{EvaluatedArgs, TestPair};
+use graph_search::astar;
+use graph_search::io;
+use graph_search::io::{EvaluatedArgs, TestPair};
 
 fn main() {
     // Handle argument parsing
