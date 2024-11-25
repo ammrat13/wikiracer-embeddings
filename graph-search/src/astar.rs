@@ -6,10 +6,8 @@ use std::collections::{BinaryHeap, HashMap};
 
 use serde::Serialize;
 
-use crate::{
-    heuristic::Heuristic,
-    io::{Graph, NodeIndex},
-};
+use crate::heuristic::Heuristic;
+use crate::io::{Graph, NodeIndex};
 
 #[derive(Debug, Serialize)]
 pub struct AStarResult {
@@ -148,7 +146,7 @@ pub fn astar(
         let to_relax = graph
             .adjacency_list
             .get(cur_id)
-            .unwrap()
+            .expect("Node index too large")
             .iter()
             .map(|n| *n)
             .filter(|n| {
