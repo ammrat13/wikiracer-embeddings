@@ -65,7 +65,7 @@ def main(args: argparse.Namespace):
         ax.set_title(title)
         ax.set_xlabel("Ratio over Null Heuristic")
         ax.set_ylabel("Density")
-        fig.savefig(os.path.join(args.output_dir, f"{key}.png"))
+        fig.savefig(os.path.join(args.output_dir, f"{key}.png"), bbox_inches="tight")
 
 
 if __name__ == "__main__":
