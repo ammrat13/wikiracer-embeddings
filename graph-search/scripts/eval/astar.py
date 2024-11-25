@@ -19,6 +19,10 @@ def main(args: argparse.Namespace):
     base_df = pd.read_csv(args.base)
     new_df = pd.read_csv(args.new)
 
+    if args.ignore_unconnected:
+        base_df = base_df[~base_df["distance"].isna()]
+        new_df = new_df[~new_df["distance"].isna()]
+
     # Print statistics for the new run
     print("New Run Statistics:")
     print(f"    Mean Time (s):        {new_df['time-seconds'].mean()}")
@@ -83,6 +87,12 @@ if __name__ == "__main__":
         type=str,
         help="Directory to save histograms to",
         default=".",
+    )
+    parser.add_argument(
+        "-i",
+        "--ignore-unconnected",
+        action="store_true",
+        help="Ignore node pairs with no path between them",
     )
     parser.add_argument(
         "base",
