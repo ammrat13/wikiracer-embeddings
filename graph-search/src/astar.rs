@@ -153,12 +153,16 @@ pub fn astar(
             .map(|n| *n)
             .filter(|n| {
                 let to_cur_gscore = cur_gscore + 1;
-                if let Some(GSEntry { gscore: to_prev_gscore }) = gs.get(n) {
+                if let Some(GSEntry {
+                    gscore: to_prev_gscore,
+                }) = gs.get(n)
+                {
                     *to_prev_gscore > to_cur_gscore
                 } else {
                     true
                 }
-            }).collect::<Vec<NodeIndex>>();
+            })
+            .collect::<Vec<NodeIndex>>();
 
         // Find the nodes in that list for which we don't have a heuristic
         // value.
@@ -181,7 +185,9 @@ pub fn astar(
             let to_cur_gscore = cur_gscore + 1;
             let to_cur_fscore = to_cur_gscore as f32 + heur_cache.get(&n).unwrap();
             debug_assert!(match gs.get(&n) {
-                Some(GSEntry { gscore: to_prev_gscore }) => *to_prev_gscore > to_cur_gscore,
+                Some(GSEntry {
+                    gscore: to_prev_gscore,
+                }) => *to_prev_gscore > to_cur_gscore,
                 None => true,
             });
             pq.push(PQEntry {
@@ -189,7 +195,12 @@ pub fn astar(
                 fscore: to_cur_fscore,
                 gscore: to_cur_gscore,
             });
-            gs.insert(n, GSEntry { gscore: to_cur_gscore });
+            gs.insert(
+                n,
+                GSEntry {
+                    gscore: to_cur_gscore,
+                },
+            );
             ret.nodes_generated += 1;
         }
     }
