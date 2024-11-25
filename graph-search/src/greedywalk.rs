@@ -6,8 +6,6 @@
 use core::f32;
 
 use serde::Serialize;
-use shuffle::fy::FisherYates;
-use shuffle::shuffler::Shuffler;
 
 use crate::heuristic::Heuristic;
 use crate::io::{Graph, NodeIndex};
@@ -29,9 +27,6 @@ pub fn greedy_walk(
     target: &NodeIndex,
     cutoff: usize,
 ) -> GreedyWalkResult {
-    let mut rng = rand::thread_rng();
-    let mut fy = FisherYates::default();
-
     let mut steps_count = 0usize;
     let mut cur = *source;
 
@@ -42,16 +37,12 @@ pub fn greedy_walk(
             return GreedyWalkResult { steps: None };
         }
 
-        // Get the neighbors of the current node. Make sure to shuffle them.
-        // This way, if there are multiple neighbors with the same estimated
-        // distance, we pick one at random.
-        let mut neighbors = graph
+        // Get the neighbors of the current node
+        let neighbors = graph
             .adjacency_list
             .get(cur)
             .expect("Node index too large")
             .clone();
-        fy.shuffle(&mut neighbors, &mut rng).unwrap();
-        let neighbors = neighbors;
 
         // Run the heuristic on all neighbors
         let heuristics = heur.estimate(*target, &neighbors);
