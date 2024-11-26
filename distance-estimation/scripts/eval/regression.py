@@ -120,8 +120,8 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
         if it == 0:
             ax.set_title(f"Distance Histogram for Nodes Treated as Unconnected")
         else:
-            ax.set_title(f"Distance Histogram for \\(d = {it}\\)")
-        ax.set_xlabel("Predicted Distance")
+            ax.set_title(f"Predicted Distance Histogram for \\(d = {it}\\)")
+        ax.set_xlabel("\\(\\hat{d}\\)")
         ax.set_ylabel("Density")
 
         fig.savefig(
