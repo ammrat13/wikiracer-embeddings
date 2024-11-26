@@ -63,7 +63,7 @@ if __name__ == "__main__":
         "--output",
         type=argparse.FileType("w"),
         help="Path to output file",
-        default="test-set.csv",
+        default="sample-set.csv",
     )
 
     args = parser.parse_args()

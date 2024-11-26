@@ -56,7 +56,7 @@ pub fn eval_args(
     // Extract parameters
     let graph_path = config["data"]["graph"]["bson"].as_str().unwrap();
     let embeddings_path = config["data"]["embeddings"][1536].as_str().unwrap();
-    let test_pairs_path = config["data"]["graph"]["test-set"].as_str().unwrap();
+    let test_pairs_path = config["data"]["graph"]["sample-set"].as_str().unwrap();
 
     // Read the graph
     let graph = File::open(graph_path).expect("Could not open graph file");
