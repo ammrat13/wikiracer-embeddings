@@ -7,6 +7,7 @@ This has to go in a separate file due to circular imports.
 from typing import Type
 
 from models import IModelMetadata
+from models.regression.linear_hadamard import RegLinearHadamardModelMetadata
 from models.regression.linear_concat import RegLinearConcatModelMetadata
 from models.regression.fcl_hadamard import RegFClHadamardModelMetadata
 from models.regression.fcl_concat import RegFClConcatModelMetadata
@@ -17,6 +18,7 @@ from models.categorical.linear_concat import CatLinearConcatModelMetadata
 from models.categorical.fcl_concat import CatFClConcatModelMetadata
 
 MODEL_REGISTRY: dict[str, Type[IModelMetadata]] = {
+    "reg-linear-hadamard": RegLinearHadamardModelMetadata,
     "reg-linear-concat": RegLinearConcatModelMetadata,
     "reg-fcl-hadamard": RegFClHadamardModelMetadata,
     "reg-fcl-concat": RegFClConcatModelMetadata,
