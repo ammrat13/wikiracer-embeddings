@@ -9,7 +9,7 @@ from models.regression import IRegressionModelMetadata
 
 class RegLinearConcatModelMetadata(IRegressionModelMetadata):
     """
-    Linear regression with element-wise concatenation to combine features.
+    Linear regression with concatenation to combine features.
     """
 
     @staticmethod

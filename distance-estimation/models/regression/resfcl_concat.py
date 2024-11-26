@@ -10,8 +10,8 @@ from models.regression import IRegressionModelMetadata
 
 class RegResFClConcatModelMetadata(IRegressionModelMetadata):
     """
-    An l-layer fully-connected neural network with element-wise concatenation to
-    combine features. Each layer has the same width, and they also have residual
+    An l-layer fully-connected neural network with concatenation to combine
+    features. Each layer has the same width, and they also have residual
     connections.
     """
 

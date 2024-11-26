@@ -9,8 +9,8 @@ from models.regression import IRegressionModelMetadata
 
 class RegFClSpConcatModelMetadata(IRegressionModelMetadata):
     """
-    An l-layer fully-connected neural network with element-wise concatenation to
-    combine features. A softplus is applied to the output.
+    An l-layer fully-connected neural network with concatenation to combine
+    features. A softplus is applied to the output.
     """
 
     @staticmethod

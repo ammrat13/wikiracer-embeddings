@@ -8,7 +8,7 @@ from models.categorical import ICategoricalModelMetadata
 
 class CatLinearConcatModelMetadata(ICategoricalModelMetadata):
     """
-    Logistic regression with element-wise concatenation to combine features.
+    Logistic regression with concatenation to combine features.
     """
 
     @staticmethod
