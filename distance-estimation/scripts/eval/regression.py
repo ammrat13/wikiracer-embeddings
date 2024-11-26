@@ -16,6 +16,7 @@ import yaml
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from data import DistanceEstimationDataset
+from models.regression import RegressionModelLoss
 
 
 def main(args: argparse.Namespace, config: dict[str, Any]):
@@ -41,12 +42,19 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
         dataset, num_workers=2, pin_memory=True
     )
 
+    loss = RegressionModelLoss(model.max_distance)
+
     print("Starting evaluation!\n")
     count = 0
+    count_connected = 0
     count_unconnected = 0
+    acc_loss = 0.0
     mean_absolute_error = 0
     mean_relative_error = 0
     mean_unconnected_prediction = 0
+
+    unweighted_mae = 0
+    unweighted_mre = 0
 
     hist_bins = np.linspace(0, model.max_distance, args.histogram_bins + 1)
     histogram = np.zeros((model.max_distance, args.histogram_bins), dtype=np.int32)
@@ -59,9 +67,13 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
 
             batch_connected_mask = labels != 0
             batch_count = len(labels)
+            batch_count_connected = torch.sum(batch_connected_mask).item()
             batch_count_unconnected = torch.sum(~batch_connected_mask).item()
             count += batch_count
+            count_connected += batch_count_connected
             count_unconnected += batch_count_unconnected
+
+            acc_loss += loss(out, labels, sample_weights).item()
 
             mean_absolute_error += torch.sum(
                 sample_weights
@@ -88,6 +100,22 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
                 )
             ).item()
 
+            unweighted_mae += torch.sum(
+                torch.where(
+                    batch_connected_mask,
+                    torch.abs(pred - labels),
+                    0.0,
+                )
+            ).item()
+            unweighted_mre += torch.sum(
+                torch.where(
+                    batch_connected_mask,
+                    torch.abs(pred - labels)
+                    / torch.where(batch_connected_mask, labels, 1.0),
+                    0.0,
+                )
+            ).item()
+
             for it in range(model.max_distance):
                 mask = labels == it
                 batch_hist, _ = np.histogram(
@@ -96,14 +124,22 @@ def main(args: argparse.Namespace, config: dict[str, Any]):
                 )
                 histogram[it] += batch_hist
 
+    acc_loss /= len(dataset_loader)
+
     normalization_constant = model.max_distance / (count * (model.max_distance - 1))
     mean_absolute_error *= normalization_constant
     mean_relative_error *= normalization_constant
     mean_unconnected_prediction /= count_unconnected
 
+    unweighted_mae /= count_connected
+    unweighted_mre /= count_connected
+
+    print(f"    Loss:                        {acc_loss}")
     print(f"    Mean Absolute Error:         {mean_absolute_error}")
     print(f"    Mean Relative Error:         {mean_relative_error}")
     print(f"    Mean Unconnected Prediction: {mean_unconnected_prediction}")
+    print(f"    Unweighted MAE:              {unweighted_mae}")
+    print(f"    Unweighted MRE:              {unweighted_mre}")
 
     histogram = histogram.astype(np.float32)
     histogram /= np.sum(histogram, axis=1, keepdims=True)
