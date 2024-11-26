@@ -32,6 +32,12 @@ if __name__ == "__main__":
         default=12,
     )
     parser.add_argument(
+        "-t",
+        "--truncate-unconnected",
+        action="store_true",
+        help="Don't plot unconnected nodes",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=argparse.FileType("w"),
@@ -47,16 +53,21 @@ if __name__ == "__main__":
     data_file = h5py.File(os.path.join(data_directory, args.file_name))
 
     ret = np.zeros(args.bins, dtype=np.uint64)
-    dset = data_file["distance"]
+    dset = data_file["bfs/distance"]
     for chunk in dset.iter_chunks():
         arr = dset[chunk]
         num, _ = np.histogram(arr, bins=np.arange(args.bins + 1))
         ret += num.astype(np.uint64)
 
+    ret = ret / np.sum(ret)
     print(ret)
 
+    if args.truncate_unconnected:
+        ret[0] = 0.0
+
     plt.bar(np.arange(args.bins), ret, width=1.0, align="edge")
-    plt.title("BFS Path-Length Histogram")
+    plt.title("Shortest-Path Length Histogram")
     plt.xlabel("Length")
-    plt.ylabel("Number of Node Pairs")
-    plt.savefig(args.output.name)
+    plt.ylabel("Density")
+    plt.xlim(0, args.bins)
+    plt.savefig(args.output.name, bbox_inches="tight")

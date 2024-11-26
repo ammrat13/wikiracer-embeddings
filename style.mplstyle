@@ -2,15 +2,18 @@
 # See: https://tex.stackexchange.com/a/623794
 # See: https://matplotlib.org/stable/users/explain/customizing.html
 
-figure.figsize: 5.5, 2.0
+figure.figsize: 5.5, 1.6
 figure.dpi: 500
 figure.autolayout: True
 
 font.family: serif
 font.serif: Times
 
-axes.titlesize: medium
 figure.titlesize: medium
+axes.titlesize: medium
+axes.labelsize: small
+xtick.labelsize: x-small
+ytick.labelsize: x-small
 
 text.usetex: True
 text.latex.preamble: \usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}[=v2]
