@@ -15,5 +15,8 @@ axes.labelsize: small
 xtick.labelsize: x-small
 ytick.labelsize: x-small
 
+legend.fancybox: False
+legend.fontsize: x-small
+
 text.usetex: True
 text.latex.preamble: \usepackage{amsmath}\usepackage{amssymb}\usepackage{siunitx}[=v2]
