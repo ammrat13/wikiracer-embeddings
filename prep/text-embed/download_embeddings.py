@@ -21,7 +21,10 @@ def main(args: argparse.Namespace) -> None:
         if batch.status != "completed":
             continue
 
-        input_file = client.files.retrieve(batch.input_file_id)
+        try:
+            input_file = client.files.retrieve(batch.input_file_id)
+        except openai.NotFoundError:
+            continue
         if INPUT_REGEX.fullmatch(input_file.filename) is None:
             continue
 
