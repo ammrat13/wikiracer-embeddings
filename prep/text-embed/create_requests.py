@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import jsonlines
 import mwparserfromhell
 import tiktoken
+from tqdm import tqdm
 
 NAMESPACE = "{http://www.mediawiki.org/xml/export-0.11/}"
 """Namespace prefix for the MediaWiki XML format
@@ -67,13 +68,17 @@ def main(args: argparse.Namespace) -> None:
     pages = filter(filter_page, get_pages(args.input))
     output = jsonlines.Writer(args.output)
 
-    for i, page in enumerate(pages):
+    for i, page in tqdm(enumerate(pages)):
 
         title = page.find(f"{NAMESPACE}title").text
         text = page.find(f"{NAMESPACE}revision").find(f"{NAMESPACE}text").text
 
-        parsed_text = title + "\n" + mwparserfromhell.parse(text).strip_code()
-        cropped_text = TOKENIZER.decode(TOKENIZER.encode(parsed_text)[:MAX_TOKENS])
+        parsed_text = mwparserfromhell.parse(text)
+        if args.lead_only:
+            parsed_text = parsed_text.get_sections(include_lead=True, include_headings=True)[0]
+
+        compiled_text = "= " + title + " =\n\n" + parsed_text.strip_code()
+        cropped_text = TOKENIZER.decode(TOKENIZER.encode(compiled_text)[:MAX_TOKENS])
 
         output.write(
             {
@@ -104,6 +109,12 @@ if __name__ == "__main__":
         type=argparse.FileType("w"),
         help="Path to the output file",
         default="embeddings.jsonl",
+    )
+    parser.add_argument(
+        "-l",
+        "--lead-only",
+        action="store_true",
+        help="Only use the lead section of each article",
     )
     args = parser.parse_args()
 
